@@ -974,12 +974,69 @@ public:
     }
 
 private:
+    static QString pathDiagnostic(const QString& name, const QString& path)
+    {
+        const QString trimmedPath = path.trimmed();
+        if (trimmedPath.isEmpty())
+        {
+            return QStringLiteral("%1=<empty>").arg(name);
+        }
+
+        const QFileInfo info(trimmedPath);
+        const QString canonicalPath = info.canonicalFilePath();
+        return QStringLiteral("%1='%2' exists=%3 file=%4 canonical='%5'")
+            .arg(name,
+                 QDir::toNativeSeparators(trimmedPath),
+                 info.exists() ? QStringLiteral("yes") : QStringLiteral("no"),
+                 info.isFile() ? QStringLiteral("yes") : QStringLiteral("no"),
+                 canonicalPath.isEmpty() ? QStringLiteral("<unresolved>") : QDir::toNativeSeparators(canonicalPath));
+    }
+
+    QString activeRpcs3ExePath() const
+    {
+        if (rpcs3ActiveExeChoice_ == 1)
+        {
+            return rpcs3LatestExePath_;
+        }
+        if (rpcs3ActiveExeChoice_ == 2)
+        {
+            return rpcs3CustomExePath_;
+        }
+        return rpcs3ExePath_;
+    }
+
+    QString activeRpcs3Label() const
+    {
+        if (rpcs3ActiveExeChoice_ == 1)
+        {
+            return QStringLiteral("Latest");
+        }
+        if (rpcs3ActiveExeChoice_ == 2)
+        {
+            return QStringLiteral("Custom");
+        }
+        return QStringLiteral("0.0.13");
+    }
+
     void loadRpcs3PathSetting()
     {
         QSettings settings(QStringLiteral("TekkenRevolutionReborn"), QStringLiteral("TRRQtTrainer"));
         rpcs3ExePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("rpcs3ExePath")).toString().trimmed());
         rpcs3LatestExePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("rpcs3LatestExePath")).toString().trimmed());
         rpcs3CustomExePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("rpcs3CustomExePath")).toString().trimmed());
+        if (settings.contains(QStringLiteral("rpcs3ActiveExeChoice")))
+        {
+            rpcs3ActiveExeChoice_ = settings.value(QStringLiteral("rpcs3ActiveExeChoice")).toInt();
+        }
+        else if (!rpcs3LatestExePath_.isEmpty())
+        {
+            rpcs3ActiveExeChoice_ = 1;
+        }
+        else if (!rpcs3CustomExePath_.isEmpty())
+        {
+            rpcs3ActiveExeChoice_ = 2;
+        }
+        rpcs3ActiveExeChoice_ = std::clamp(rpcs3ActiveExeChoice_, 0, 2);
         npeb01406GamePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("npeb01406GamePath")).toString().trimmed());
         npub31250GamePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("npub31250GamePath")).toString().trimmed());
         npjb00404GamePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("npjb00404GamePath")).toString().trimmed());
@@ -993,6 +1050,15 @@ private:
 
         refreshActiveGamePath();
         syncRpcs3SessionPaths();
+        AppLogger::info(QStringLiteral("Loaded RPCS3 configuration from '%1': active=%2; %3; %4; %5; %6; %7; %8")
+                            .arg(QDir::toNativeSeparators(settings.fileName()),
+                                 activeRpcs3Label(),
+                                 pathDiagnostic(QStringLiteral("0.0.13"), rpcs3ExePath_),
+                                 pathDiagnostic(QStringLiteral("Latest"), rpcs3LatestExePath_),
+                                 pathDiagnostic(QStringLiteral("Custom"), rpcs3CustomExePath_),
+                                 pathDiagnostic(QStringLiteral("NPEB01406"), npeb01406GamePath_),
+                                 pathDiagnostic(QStringLiteral("NPUB31250"), npub31250GamePath_),
+                                 pathDiagnostic(QStringLiteral("NPJB00404"), npjb00404GamePath_)));
     }
 
     void saveRpcs3PathSetting() const
@@ -1001,6 +1067,7 @@ private:
         settings.setValue(QStringLiteral("rpcs3ExePath"), rpcs3ExePath_.trimmed());
         settings.setValue(QStringLiteral("rpcs3LatestExePath"), rpcs3LatestExePath_.trimmed());
         settings.setValue(QStringLiteral("rpcs3CustomExePath"), rpcs3CustomExePath_.trimmed());
+        settings.setValue(QStringLiteral("rpcs3ActiveExeChoice"), rpcs3ActiveExeChoice_);
         settings.setValue(QStringLiteral("npeb01406GamePath"), npeb01406GamePath_.trimmed());
         settings.setValue(QStringLiteral("npub31250GamePath"), npub31250GamePath_.trimmed());
         settings.setValue(QStringLiteral("npjb00404GamePath"), npjb00404GamePath_.trimmed());
@@ -1028,8 +1095,13 @@ private:
 
     void syncRpcs3SessionPaths()
     {
-        rpcs3Session_.setEmulatorPath(rpcs3ExePath_);
+        const QString activeExePath = activeRpcs3ExePath();
+        rpcs3Session_.setEmulatorPath(activeExePath);
         rpcs3Session_.setGamePath(rpcs3GamePath_);
+        AppLogger::info(QStringLiteral("Synchronized RPCS3 session paths: active=%1; %2; %3")
+                            .arg(activeRpcs3Label(),
+                                 pathDiagnostic(QStringLiteral("exe"), activeExePath),
+                                 pathDiagnostic(QStringLiteral("target"), rpcs3GamePath_)));
     }
 
     void showTransientInfoMessage(const QString& title, const QString& text, int closeDelayMs = 1400)
@@ -1077,6 +1149,15 @@ private:
         customRow->addWidget(customPathEdit, 1);
         customRow->addWidget(customBrowse);
         v->addLayout(customRow);
+
+        auto* activeRow = new QHBoxLayout();
+        auto* activeLabel = new QLabel(QStringLiteral("Game launch RPCS3:"), &dlg);
+        auto* activeCombo = new QComboBox(&dlg);
+        activeCombo->addItems({QStringLiteral("RPCS3 0.0.13"), QStringLiteral("RPCS3 Latest"), QStringLiteral("RPCS3 Custom")});
+        activeCombo->setCurrentIndex(rpcs3ActiveExeChoice_);
+        activeRow->addWidget(activeLabel);
+        activeRow->addWidget(activeCombo, 1);
+        v->addLayout(activeRow);
 
         auto* npebRow = new QHBoxLayout();
         auto* npebLabel = new QLabel(QStringLiteral("NPEB01406 EBOOT.BIN:"), &dlg);
@@ -1198,14 +1279,22 @@ private:
 
         if (dlg.exec() != QDialog::Accepted)
         {
+            AppLogger::info(QStringLiteral("RPCS3 configuration dialog canceled; settings unchanged."));
             return;
         }
 
         const QString path = pathEdit->text().trimmed();
         const QString latestPath = latestPathEdit->text().trimmed();
         const QString customPath = customPathEdit->text().trimmed();
+        const int activeChoice = activeCombo->currentIndex();
+        AppLogger::info(QStringLiteral("Validating RPCS3 configuration: active=%1; %2; %3; %4")
+                            .arg(activeCombo->currentText(),
+                                 pathDiagnostic(QStringLiteral("0.0.13"), path),
+                                 pathDiagnostic(QStringLiteral("Latest"), latestPath),
+                                 pathDiagnostic(QStringLiteral("Custom"), customPath)));
         if (path.isEmpty() && latestPath.isEmpty() && customPath.isEmpty())
         {
+            AppLogger::error(QStringLiteral("RPCS3 configuration rejected: all executable paths are empty."));
             QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Set at least one RPCS3 executable path."));
             return;
         }
@@ -1213,7 +1302,16 @@ private:
             (!latestPath.isEmpty() && !QFileInfo::exists(latestPath)) ||
             (!customPath.isEmpty() && !QFileInfo::exists(customPath)))
         {
+            AppLogger::error(QStringLiteral("RPCS3 configuration rejected: one or more executable paths do not exist."));
             QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("One or more RPCS3 executable paths do not exist."));
+            return;
+        }
+
+        const std::array<QString, 3> executablePaths{path, latestPath, customPath};
+        if (activeChoice < 0 || activeChoice >= static_cast<int>(executablePaths.size()) || executablePaths[activeChoice].isEmpty())
+        {
+            AppLogger::error(QStringLiteral("RPCS3 configuration rejected: selected game-launch executable is empty."));
+            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("The RPCS3 selected for game launch has no executable path."));
             return;
         }
 
@@ -1224,6 +1322,10 @@ private:
             (!npubPath.isEmpty() && !QFileInfo::exists(npubPath)) ||
             (!npjbPath.isEmpty() && !QFileInfo::exists(npjbPath)))
         {
+            AppLogger::error(QStringLiteral("RPCS3 configuration rejected: one or more EBOOT paths do not exist. %1; %2; %3")
+                                 .arg(pathDiagnostic(QStringLiteral("NPEB01406"), npebPath),
+                                      pathDiagnostic(QStringLiteral("NPUB31250"), npubPath),
+                                      pathDiagnostic(QStringLiteral("NPJB00404"), npjbPath)));
             QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("One or more EBOOT paths are set but do not exist."));
             return;
         }
@@ -1231,12 +1333,15 @@ private:
         rpcs3ExePath_ = QDir::toNativeSeparators(path);
         rpcs3LatestExePath_ = QDir::toNativeSeparators(latestPath);
         rpcs3CustomExePath_ = QDir::toNativeSeparators(customPath);
+        rpcs3ActiveExeChoice_ = activeChoice;
         npeb01406GamePath_ = QDir::toNativeSeparators(npebPath);
         npub31250GamePath_ = QDir::toNativeSeparators(npubPath);
         npjb00404GamePath_ = QDir::toNativeSeparators(npjbPath);
         refreshActiveGamePath();
         syncRpcs3SessionPaths();
         saveRpcs3PathSetting();
+        AppLogger::info(QStringLiteral("RPCS3 configuration saved: active=%1; %2")
+                    .arg(activeRpcs3Label(), pathDiagnostic(QStringLiteral("activeExe"), activeRpcs3ExePath())));
         statusLabel_->setText(QStringLiteral("Status: RPCS3 config saved"));
     }
 
@@ -1276,14 +1381,17 @@ private:
 
         if (choice == 0)
         {
+            rpcs3ActiveExeChoice_ = 0;
             startRpcs3(rpcs3ExePath_, QStringLiteral("RPCS3 0.0.13"));
         }
         else if (choice == 1)
         {
+            rpcs3ActiveExeChoice_ = 1;
             startRpcs3(rpcs3LatestExePath_, QStringLiteral("RPCS3 Latest"));
         }
         else if (choice == 2)
         {
+            rpcs3ActiveExeChoice_ = 2;
             startRpcs3(rpcs3CustomExePath_, QStringLiteral("RPCS3 Custom"));
         }
     }
@@ -1359,7 +1467,8 @@ private:
     {
         syncRpcs3SessionPaths();
         saveRpcs3PathSetting();
-        AppLogger::info(QStringLiteral("Reset RPCS3 requested. exe=%1").arg(rpcs3ExePath_));
+        AppLogger::info(QStringLiteral("Reset RPCS3 requested. active=%1 exe=%2")
+                    .arg(activeRpcs3Label(), activeRpcs3ExePath()));
         stopRuntimeWrites(false);
         if (process_ != nullptr)
         {
@@ -1391,7 +1500,8 @@ private:
         rpcs3GamePath_ = QDir::toNativeSeparators(gamePath.trimmed());
         syncRpcs3SessionPaths();
         saveRpcs3PathSetting();
-        AppLogger::info(QStringLiteral("Start %1 requested. exe=%2 target=%3").arg(titleId, rpcs3ExePath_, rpcs3GamePath_));
+        AppLogger::info(QStringLiteral("Start %1 requested. active=%2 exe=%3 target=%4")
+                    .arg(titleId, activeRpcs3Label(), activeRpcs3ExePath(), rpcs3GamePath_));
         QString error;
         if (!rpcs3Session_.startGame(&error))
         {
@@ -1452,7 +1562,8 @@ private:
     {
         syncRpcs3SessionPaths();
         saveRpcs3PathSetting();
-        AppLogger::info(QStringLiteral("Restart Game requested. exe=%1 target=%2").arg(rpcs3ExePath_, rpcs3GamePath_));
+        AppLogger::info(QStringLiteral("Restart Game requested. active=%1 exe=%2 target=%3")
+                    .arg(activeRpcs3Label(), activeRpcs3ExePath(), rpcs3GamePath_));
         stopRuntimeWrites(false);
         if (process_ != nullptr)
         {
@@ -2859,6 +2970,7 @@ private:
     QString rpcs3ExePath_;
     QString rpcs3LatestExePath_;
     QString rpcs3CustomExePath_;
+    int rpcs3ActiveExeChoice_ = 0;
     QString rpcs3GamePath_;
     QString npeb01406GamePath_;
     QString npub31250GamePath_;

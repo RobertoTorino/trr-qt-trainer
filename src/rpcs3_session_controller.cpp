@@ -241,15 +241,53 @@ bool Rpcs3SessionController::startGame(QString* error) const
 bool Rpcs3SessionController::killProcessTree(DWORD pid)
 {
     QProcess killer;
+    AppLogger::info(QStringLiteral("Executing process cleanup: taskkill /PID %1 /T /F").arg(pid));
     killer.start(QStringLiteral("taskkill"),
                  {QStringLiteral("/PID"), QString::number(pid), QStringLiteral("/T"), QStringLiteral("/F")});
 
-    if (!killer.waitForFinished(5000))
+    if (killer.waitForFinished(8000) &&
+        killer.exitStatus() == QProcess::NormalExit &&
+        (killer.exitCode() == 0 || killer.exitCode() == 128))
     {
+        return true;
+    }
+
+    const QString taskkillError = QString::fromLocal8Bit(killer.readAllStandardError()).trimmed();
+    AppLogger::warn(QStringLiteral("taskkill /PID failed for pid=%1 with code %2: %3")
+                        .arg(pid)
+                        .arg(killer.exitCode())
+                        .arg(taskkillError.isEmpty() ? QStringLiteral("no error output") : taskkillError));
+
+    HANDLE process = OpenProcess(PROCESS_TERMINATE | SYNCHRONIZE, FALSE, pid);
+    if (process == nullptr)
+    {
+        const DWORD code = GetLastError();
+        if (code == ERROR_INVALID_PARAMETER)
+        {
+            return true;
+        }
+        AppLogger::error(QStringLiteral("OpenProcess failed for pid=%1 (win32=%2). If RPCS3 is elevated, run the trainer as administrator.")
+                             .arg(pid)
+                             .arg(code));
         return false;
     }
 
-    return killer.exitStatus() == QProcess::NormalExit && killer.exitCode() == 0;
+    const BOOL terminated = TerminateProcess(process, 1);
+    const DWORD terminateError = terminated ? ERROR_SUCCESS : GetLastError();
+    const DWORD waitResult = terminated ? WaitForSingleObject(process, 5000) : WAIT_FAILED;
+    CloseHandle(process);
+
+    if (!terminated || waitResult != WAIT_OBJECT_0)
+    {
+        AppLogger::error(QStringLiteral("TerminateProcess failed for pid=%1 (win32=%2, wait=%3)")
+                             .arg(pid)
+                             .arg(terminateError)
+                             .arg(waitResult));
+        return false;
+    }
+
+    AppLogger::info(QStringLiteral("TerminateProcess completed for pid=%1.").arg(pid));
+    return true;
 }
 
 bool Rpcs3SessionController::killProcessImage(const QString& imageName)
@@ -279,7 +317,11 @@ bool Rpcs3SessionController::killProcessImage(const QString& imageName)
     // taskkill returns non-zero when the image is not running; that's acceptable.
     if (!(killer.exitCode() == 0 || killer.exitCode() == 128))
     {
-        AppLogger::error(QStringLiteral("taskkill failed for image %1 with code %2").arg(imageName).arg(killer.exitCode()));
+        const QString errorOutput = QString::fromLocal8Bit(killer.readAllStandardError()).trimmed();
+        AppLogger::warn(QStringLiteral("taskkill failed for image %1 with code %2: %3")
+                            .arg(imageName)
+                            .arg(killer.exitCode())
+                            .arg(errorOutput.isEmpty() ? QStringLiteral("no error output") : errorOutput));
         return false;
     }
 
@@ -474,7 +516,25 @@ bool Rpcs3SessionController::ensureNoRunningRpcs3(QString* error) const
     {
         if (!killProcessImage(name))
         {
-            return setError(error, QStringLiteral("Failed to terminate existing RPCS3 processes."));
+            const std::vector<DWORD> pids = findProcessIdsByExeName(name.toStdWString());
+            if (pids.empty())
+            {
+                AppLogger::info(QStringLiteral("No %1 processes remain after taskkill returned an error.").arg(name));
+                continue;
+            }
+
+            AppLogger::warn(QStringLiteral("Retrying %1 cleanup by PID: %2")
+                                .arg(name)
+                                .arg(pids.size()));
+            for (const DWORD pid : pids)
+            {
+                if (!killProcessTree(pid))
+                {
+                    return setError(error,
+                                    QStringLiteral("Failed to terminate RPCS3 process %1. If RPCS3 is elevated, run the trainer as administrator.")
+                                        .arg(pid));
+                }
+            }
         }
     }
 
