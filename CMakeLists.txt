@@ -10,8 +10,8 @@ if (DEFINED ENV{QTDIR})
     list(APPEND CMAKE_PREFIX_PATH "$ENV{QTDIR}")
 endif()
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Network Widgets)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Network Widgets)
 
 add_executable(trr_qt_trainer WIN32
     src/app_logger.cpp
@@ -21,7 +21,7 @@ add_executable(trr_qt_trainer WIN32
     src/rpcs3_session_controller.h
 )
 
-target_link_libraries(trr_qt_trainer PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(trr_qt_trainer PRIVATE Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Widgets)
 
 if (WIN32)
     target_link_libraries(trr_qt_trainer PRIVATE dwmapi wininet)

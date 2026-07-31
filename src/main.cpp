@@ -43,6 +43,10 @@
 #include <QtCore/QTimer>
 #include <QtCore/QUrl>
 
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkReply>
+#include <QtNetwork/QNetworkRequest>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -55,7 +59,6 @@
 #define NOMINMAX
 #include <Windows.h>
 #include <dwmapi.h>
-#include <wininet.h>
 
 #include "app_logger.h"
 #include "rpcs3_session_controller.h"
@@ -73,12 +76,6 @@ constexpr int kLockIntervalMs = 250;
 constexpr int kConnectionStatusIntervalMs = 5000;
 constexpr int kModeResetPulseMs = 120;
 constexpr std::uint32_t kRoundTimerTicksPerSecond = 60;
-
-bool isInternetAvailable()
-{
-    DWORD connectionFlags = 0;
-    return InternetGetConnectedState(&connectionFlags, 0) != FALSE;
-}
 
 constexpr std::uint32_t kOffP1Id = 0x170;
 constexpr std::uint32_t kOffP2Id = 0x174;
@@ -547,7 +544,7 @@ public:
         connectionLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
         statusLabel_ = new QLabel(QStringLiteral("Status: Not Attached"), connectionBox);
         pointerLabel_ = new QLabel(QStringLiteral("Battle Pointer: Unresolved"), connectionBox);
-        connectionStatusLabel_ = new QLabel(connectionStatusText(), connectionBox);
+        connectionStatusLabel_ = new QLabel(QStringLiteral("Connection Status: Checking..."), connectionBox);
         connectionLayout->addWidget(statusLabel_, 0, 0);
         connectionLayout->addWidget(pointerLabel_, 1, 0);
         connectionLayout->addWidget(connectionStatusLabel_, 2, 0);
@@ -842,6 +839,7 @@ public:
         timer_->setInterval(kLockIntervalMs);
         connectionStatusTimer_ = new QTimer(this);
         connectionStatusTimer_->setInterval(kConnectionStatusIntervalMs);
+        networkManager_ = new QNetworkAccessManager(this);
 
         connect(attachButton_, &QPushButton::clicked, this, [this](bool checked) {
             if (checked)
@@ -952,11 +950,12 @@ public:
         });
 
         connect(connectionStatusTimer_, &QTimer::timeout, this, [this]() {
-            connectionStatusLabel_->setText(connectionStatusText());
+            checkInternetConnection();
         });
 
         timer_->start();
         connectionStatusTimer_->start();
+        checkInternetConnection();
         updateLiveMonitor();
 
         QTimer::singleShot(0, this, [this]() {
@@ -2960,9 +2959,37 @@ private:
     }
 
 private:
-    static QString connectionStatusText()
+    void checkInternetConnection()
     {
-        return isInternetAvailable() ? QStringLiteral("Connection Status: Online") : QStringLiteral("Connection Status: Offline");
+        if (connectionCheckInProgress_ || networkManager_ == nullptr)
+        {
+            return;
+        }
+
+        connectionCheckInProgress_ = true;
+        connectionStatusLabel_->setText(QStringLiteral("Connection Status: Checking..."));
+
+        QNetworkRequest request(QUrl(QStringLiteral("http://www.msftconnecttest.com/connecttest.txt")));
+        request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
+        QNetworkReply* reply = networkManager_->get(request);
+
+        QTimer::singleShot(4000, reply, [reply]() {
+            if (reply->isRunning())
+            {
+                reply->abort();
+            }
+        });
+
+        connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+            const bool reachable = reply->error() == QNetworkReply::NoError &&
+                                   reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200 &&
+                                   reply->readAll().trimmed() == QByteArrayLiteral("Microsoft Connect Test");
+            connectionStatusLabel_->setText(reachable
+                                                ? QStringLiteral("Connection Status: Online")
+                                                : QStringLiteral("Connection Status: Offline"));
+            connectionCheckInProgress_ = false;
+            reply->deleteLater();
+        });
     }
 
     HANDLE process_ = nullptr;
@@ -3073,6 +3100,8 @@ private:
 
     QTimer* timer_ = nullptr;
     QTimer* connectionStatusTimer_ = nullptr;
+    QNetworkAccessManager* networkManager_ = nullptr;
+    bool connectionCheckInProgress_ = false;
     QDialog* runtimeDialog_ = nullptr;
     QDialog* valueWritesDialog_ = nullptr;
     QDialog* advancedMemoryDialog_ = nullptr;
