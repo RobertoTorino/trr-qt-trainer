@@ -2537,108 +2537,101 @@ private:
     void showRuntimeDialog()
     {
         runtimeDialog_->setFixedSize(runtimeDialog_->minimumSizeHint());
-        runtimeDialog_->exec();
+        runtimeDialog_->show();
+        runtimeDialog_->raise();
+        runtimeDialog_->activateWindow();
     }
 
     void showValueWritesDialog()
     {
         valueWritesDialog_->setFixedSize(valueWritesDialog_->minimumSizeHint());
-        valueWritesDialog_->exec();
+        valueWritesDialog_->show();
+        valueWritesDialog_->raise();
+        valueWritesDialog_->activateWindow();
     }
 
     void showAdvancedMemoryDialog()
     {
-        QDialog dialog(this);
-        dialog.setWindowTitle(QStringLiteral("Advanced Memory"));
-
-        auto* dialogLayout = new QVBoxLayout(&dialog);
-        auto* advancedBox = new QGroupBox(QStringLiteral("Advanced Memory"), &dialog);
-        auto* advancedGrid = new QGridLayout(advancedBox);
-        advancedP1PositionCheckbox_ = new QCheckBox(QStringLiteral("Write P1 position"), advancedBox);
-        advancedP2PositionCheckbox_ = new QCheckBox(QStringLiteral("Write P2 position"), advancedBox);
-        advancedAnimationCheckbox_ = new QCheckBox(QStringLiteral("Write P1 animation speed"), advancedBox);
-        advancedGlobalStageCheckbox_ = new QCheckBox(QStringLiteral("Write global stage ID"), advancedBox);
-
-        const auto configurePositionSpin = [](QDoubleSpinBox* spin) {
-            spin->setRange(-1000000.0, 1000000.0);
-            spin->setDecimals(4);
-            spin->setFixedWidth(110);
-        };
-        advancedP1XSpin_ = new QDoubleSpinBox(advancedBox);
-        advancedP1YSpin_ = new QDoubleSpinBox(advancedBox);
-        advancedP1ZSpin_ = new QDoubleSpinBox(advancedBox);
-        advancedP2XSpin_ = new QDoubleSpinBox(advancedBox);
-        advancedP2YSpin_ = new QDoubleSpinBox(advancedBox);
-        advancedP2ZSpin_ = new QDoubleSpinBox(advancedBox);
-        for (QDoubleSpinBox* spin : {advancedP1XSpin_, advancedP1YSpin_, advancedP1ZSpin_, advancedP2XSpin_, advancedP2YSpin_, advancedP2ZSpin_})
+        if (advancedMemoryDialog_ == nullptr)
         {
-            configurePositionSpin(spin);
+            advancedMemoryDialog_ = new QDialog(this);
+            advancedMemoryDialog_->setWindowTitle(QStringLiteral("Advanced Memory"));
+
+            auto* dialogLayout = new QVBoxLayout(advancedMemoryDialog_);
+            auto* advancedBox = new QGroupBox(QStringLiteral("Advanced Memory"), advancedMemoryDialog_);
+            auto* advancedGrid = new QGridLayout(advancedBox);
+            advancedP1PositionCheckbox_ = new QCheckBox(QStringLiteral("Write P1 position"), advancedBox);
+            advancedP2PositionCheckbox_ = new QCheckBox(QStringLiteral("Write P2 position"), advancedBox);
+            advancedAnimationCheckbox_ = new QCheckBox(QStringLiteral("Write P1 animation speed"), advancedBox);
+            advancedGlobalStageCheckbox_ = new QCheckBox(QStringLiteral("Write global stage ID"), advancedBox);
+
+            const auto configurePositionSpin = [](QDoubleSpinBox* spin) {
+                spin->setRange(-1000000.0, 1000000.0);
+                spin->setDecimals(4);
+                spin->setFixedWidth(110);
+            };
+            advancedP1XSpin_ = new QDoubleSpinBox(advancedBox);
+            advancedP1YSpin_ = new QDoubleSpinBox(advancedBox);
+            advancedP1ZSpin_ = new QDoubleSpinBox(advancedBox);
+            advancedP2XSpin_ = new QDoubleSpinBox(advancedBox);
+            advancedP2YSpin_ = new QDoubleSpinBox(advancedBox);
+            advancedP2ZSpin_ = new QDoubleSpinBox(advancedBox);
+            for (QDoubleSpinBox* spin : {advancedP1XSpin_, advancedP1YSpin_, advancedP1ZSpin_, advancedP2XSpin_, advancedP2YSpin_, advancedP2ZSpin_})
+            {
+                configurePositionSpin(spin);
+            }
+
+            advancedAnimationEdit_ = new QLineEdit(QStringLiteral("0x00001000"), advancedBox);
+            advancedGlobalStageEdit_ = new QLineEdit(QStringLiteral("0x00000000"), advancedBox);
+            advancedAnimationEdit_->setFixedWidth(110);
+            advancedGlobalStageEdit_->setFixedWidth(110);
+            advancedGameStateLabel_ = new QLabel(QStringLiteral("Game state: n/a"), advancedBox);
+            advancedGameStateReadLabel_ = new QLabel(QStringLiteral("Game state (read): n/a"), advancedBox);
+            advancedReadButton_ = new QPushButton(QStringLiteral("Read Advanced Values"), advancedBox);
+            advancedApplyButton_ = new QPushButton(QStringLiteral("Apply Checked Values"), advancedBox);
+
+            advancedGrid->addWidget(advancedP1PositionCheckbox_, 0, 0);
+            advancedGrid->addWidget(new QLabel(QStringLiteral("X:"), advancedBox), 0, 1);
+            advancedGrid->addWidget(advancedP1XSpin_, 0, 2);
+            advancedGrid->addWidget(new QLabel(QStringLiteral("Y:"), advancedBox), 0, 3);
+            advancedGrid->addWidget(advancedP1YSpin_, 0, 4);
+            advancedGrid->addWidget(new QLabel(QStringLiteral("Z:"), advancedBox), 0, 5);
+            advancedGrid->addWidget(advancedP1ZSpin_, 0, 6);
+            advancedGrid->addWidget(advancedP2PositionCheckbox_, 1, 0);
+            advancedGrid->addWidget(new QLabel(QStringLiteral("X:"), advancedBox), 1, 1);
+            advancedGrid->addWidget(advancedP2XSpin_, 1, 2);
+            advancedGrid->addWidget(new QLabel(QStringLiteral("Y:"), advancedBox), 1, 3);
+            advancedGrid->addWidget(advancedP2YSpin_, 1, 4);
+            advancedGrid->addWidget(new QLabel(QStringLiteral("Z:"), advancedBox), 1, 5);
+            advancedGrid->addWidget(advancedP2ZSpin_, 1, 6);
+            advancedGrid->addWidget(advancedAnimationCheckbox_, 2, 0, 1, 2);
+            advancedGrid->addWidget(advancedAnimationEdit_, 2, 2);
+            advancedGrid->addWidget(advancedGlobalStageCheckbox_, 3, 0, 1, 2);
+            advancedGrid->addWidget(advancedGlobalStageEdit_, 3, 2);
+            advancedGrid->addWidget(advancedGameStateLabel_, 4, 0, 1, 3);
+            advancedGrid->addWidget(advancedGameStateReadLabel_, 4, 3, 1, 4);
+
+            auto* actionRowWidget = new QWidget(advancedBox);
+            auto* actionRow = new QHBoxLayout(actionRowWidget);
+            actionRow->setContentsMargins(0, 0, 0, 0);
+            actionRow->addWidget(advancedReadButton_);
+            actionRow->addWidget(advancedApplyButton_);
+            actionRow->addStretch(1);
+            advancedGrid->addWidget(actionRowWidget, 5, 0, 1, 7);
+            dialogLayout->addWidget(advancedBox);
+
+            auto* buttons = new QDialogButtonBox(QDialogButtonBox::Close, advancedMemoryDialog_);
+            dialogLayout->addWidget(buttons);
+            connect(advancedReadButton_, &QPushButton::clicked, this, [this]() { readAdvancedValuesIntoUi(); });
+            connect(advancedApplyButton_, &QPushButton::clicked, this, [this]() { applyAdvancedValues(); });
+            connect(buttons, &QDialogButtonBox::rejected, advancedMemoryDialog_, &QDialog::reject);
+
+            advancedMemoryDialog_->setFixedSize(advancedMemoryDialog_->minimumSizeHint());
         }
 
-        advancedAnimationEdit_ = new QLineEdit(QStringLiteral("0x00001000"), advancedBox);
-        advancedGlobalStageEdit_ = new QLineEdit(QStringLiteral("0x00000000"), advancedBox);
-        advancedAnimationEdit_->setFixedWidth(110);
-        advancedGlobalStageEdit_->setFixedWidth(110);
-        advancedGameStateLabel_ = new QLabel(QStringLiteral("Game state: n/a"), advancedBox);
-        advancedGameStateReadLabel_ = new QLabel(QStringLiteral("Game state (read): n/a"), advancedBox);
-        advancedReadButton_ = new QPushButton(QStringLiteral("Read Advanced Values"), advancedBox);
-        advancedApplyButton_ = new QPushButton(QStringLiteral("Apply Checked Values"), advancedBox);
-
-        advancedGrid->addWidget(advancedP1PositionCheckbox_, 0, 0);
-        advancedGrid->addWidget(new QLabel(QStringLiteral("X:"), advancedBox), 0, 1);
-        advancedGrid->addWidget(advancedP1XSpin_, 0, 2);
-        advancedGrid->addWidget(new QLabel(QStringLiteral("Y:"), advancedBox), 0, 3);
-        advancedGrid->addWidget(advancedP1YSpin_, 0, 4);
-        advancedGrid->addWidget(new QLabel(QStringLiteral("Z:"), advancedBox), 0, 5);
-        advancedGrid->addWidget(advancedP1ZSpin_, 0, 6);
-        advancedGrid->addWidget(advancedP2PositionCheckbox_, 1, 0);
-        advancedGrid->addWidget(new QLabel(QStringLiteral("X:"), advancedBox), 1, 1);
-        advancedGrid->addWidget(advancedP2XSpin_, 1, 2);
-        advancedGrid->addWidget(new QLabel(QStringLiteral("Y:"), advancedBox), 1, 3);
-        advancedGrid->addWidget(advancedP2YSpin_, 1, 4);
-        advancedGrid->addWidget(new QLabel(QStringLiteral("Z:"), advancedBox), 1, 5);
-        advancedGrid->addWidget(advancedP2ZSpin_, 1, 6);
-        advancedGrid->addWidget(advancedAnimationCheckbox_, 2, 0, 1, 2);
-        advancedGrid->addWidget(advancedAnimationEdit_, 2, 2);
-        advancedGrid->addWidget(advancedGlobalStageCheckbox_, 3, 0, 1, 2);
-        advancedGrid->addWidget(advancedGlobalStageEdit_, 3, 2);
-        advancedGrid->addWidget(advancedGameStateLabel_, 4, 0, 1, 3);
-        advancedGrid->addWidget(advancedGameStateReadLabel_, 4, 3, 1, 4);
-
-        auto* actionRowWidget = new QWidget(advancedBox);
-        auto* actionRow = new QHBoxLayout(actionRowWidget);
-        actionRow->setContentsMargins(0, 0, 0, 0);
-        actionRow->addWidget(advancedReadButton_);
-        actionRow->addWidget(advancedApplyButton_);
-        actionRow->addStretch(1);
-        advancedGrid->addWidget(actionRowWidget, 5, 0, 1, 7);
-        dialogLayout->addWidget(advancedBox);
-
-        auto* buttons = new QDialogButtonBox(QDialogButtonBox::Close, &dialog);
-        dialogLayout->addWidget(buttons);
-        connect(advancedReadButton_, &QPushButton::clicked, this, [this]() { readAdvancedValuesIntoUi(); });
-        connect(advancedApplyButton_, &QPushButton::clicked, this, [this]() { applyAdvancedValues(); });
-        connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-
-        dialog.setFixedSize(dialog.minimumSizeHint());
-        dialog.exec();
-
-        advancedP1PositionCheckbox_ = nullptr;
-        advancedP2PositionCheckbox_ = nullptr;
-        advancedAnimationCheckbox_ = nullptr;
-        advancedGlobalStageCheckbox_ = nullptr;
-        advancedP1XSpin_ = nullptr;
-        advancedP1YSpin_ = nullptr;
-        advancedP1ZSpin_ = nullptr;
-        advancedP2XSpin_ = nullptr;
-        advancedP2YSpin_ = nullptr;
-        advancedP2ZSpin_ = nullptr;
-        advancedAnimationEdit_ = nullptr;
-        advancedGlobalStageEdit_ = nullptr;
-        advancedGameStateLabel_ = nullptr;
-        advancedGameStateReadLabel_ = nullptr;
-        advancedReadButton_ = nullptr;
-        advancedApplyButton_ = nullptr;
+        advancedMemoryDialog_->show();
+        advancedMemoryDialog_->raise();
+        advancedMemoryDialog_->activateWindow();
     }
 
     bool readAdvancedValuesIntoUi()
@@ -2970,6 +2963,7 @@ private:
     QTimer* connectionStatusTimer_ = nullptr;
     QDialog* runtimeDialog_ = nullptr;
     QDialog* valueWritesDialog_ = nullptr;
+    QDialog* advancedMemoryDialog_ = nullptr;
     QDialog* tutorialDialog_ = nullptr;
     QTabWidget* tutorialTabs_ = nullptr;
     QTextBrowser* tutorialReadmeView_ = nullptr;
