@@ -1,0 +1,25 @@
+# CMake and compiler output
+build*/
+cmake-build-*/
+out/
+CMakeCache.txt
+CMakeFiles/
+*_autogen/
+
+# Visual Studio and editor state
+.vs/
+*.user
+*.suo
+
+# Compiled artifacts
+*.obj
+*.pdb
+*.ilk
+*.lib
+*.exp
+*.exe
+*.dll
+
+# Runtime output
+logs/
+media/snapshots/

@@ -1,0 +1,21 @@
+{
+    "autoDisableStageLock": true,
+    "forceCounters": false,
+    "forceTimer": false,
+    "infinite": true,
+    "lockSelection": false,
+    "lockValues": true,
+    "p1Controller": true,
+    "p1Counter": 0,
+    "p1Index": 13,
+    "p2Counter": 0,
+    "p2Cpu": true,
+    "p2Index": 15,
+    "practice": true,
+    "stageIndex": 4,
+    "timerValue": 3600,
+    "transitionGuard": true,
+    "transitionGuardMs": 2400,
+    "ui": true,
+    "version": 1
+}
