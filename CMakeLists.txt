@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/src/ui")
 
 if (DEFINED ENV{QTDIR})
     list(APPEND CMAKE_PREFIX_PATH "$ENV{QTDIR}")
@@ -19,6 +21,8 @@ add_executable(trr_qt_trainer WIN32
     src/main.cpp
     src/rpcs3_session_controller.cpp
     src/rpcs3_session_controller.h
+    src/ui/runtime_dialog.ui
+    src/ui/value_writes_dialog.ui
 )
 
 target_link_libraries(trr_qt_trainer PRIVATE Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Widgets)

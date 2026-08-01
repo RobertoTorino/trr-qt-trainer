@@ -63,6 +63,8 @@
 
 #include "app_logger.h"
 #include "rpcs3_session_controller.h"
+#include "ui_runtime_dialog.h"
+#include "ui_value_writes_dialog.h"
 
 namespace
 {
@@ -619,54 +621,37 @@ public:
 
         layout->addLayout(topBoxes);
 
-        auto* options = root;
+        runtimeDialog_ = new QDialog(this);
+        Ui::RuntimeDialog runtimeUi;
+        runtimeUi.setupUi(runtimeDialog_);
+        lockCheckbox_ = runtimeUi.lockCheckbox;
+        lockSelectionCheckbox_ = runtimeUi.lockSelectionCheckbox;
+        autoDisableStageLockCheckbox_ = runtimeUi.autoDisableStageLockCheckbox;
+        guardPauseCheckbox_ = runtimeUi.guardPauseCheckbox;
+        guardPauseMsSpin_ = runtimeUi.guardPauseMsSpin;
+        stabilizeCheckbox_ = runtimeUi.stabilizeCheckbox;
+        modeResetPulseCheckbox_ = runtimeUi.modeResetPulseCheckbox;
+        p1ControllerCheckbox_ = runtimeUi.p1ControllerCheckbox;
+        p2CpuCheckbox_ = runtimeUi.p2CpuCheckbox;
+        countersCheckbox_ = runtimeUi.countersCheckbox;
+        p1CounterSpin_ = runtimeUi.p1CounterSpin;
+        p2CounterSpin_ = runtimeUi.p2CounterSpin;
 
-        lockCheckbox_ = new QCheckBox(QStringLiteral("Lock values continuously (fixes post-round black screen)"), options);
-        lockSelectionCheckbox_ = new QCheckBox(QStringLiteral("Also lock character/stage selection continuously"), options);
-        autoDisableStageLockCheckbox_ = new QCheckBox(QStringLiteral("Auto-disable stage lock once match starts"), options);
-        guardPauseCheckbox_ = new QCheckBox(QStringLiteral("Pause writes around round transitions"), options);
-        stabilizeCheckbox_ = new QCheckBox(QStringLiteral("Stabilize writes for ~10s after apply"), options);
-        modeResetPulseCheckbox_ = new QCheckBox(QStringLiteral("Apply mode using reset pulse (4 -> target)"), options);
-
-        writeModeCheckbox_ = new QCheckBox(QStringLiteral("Write game mode (offset 0x178)"), options);
-        modePresetCombo_ = new QComboBox(options);
-        modePresetCombo_->setFixedWidth(230);
-
-        writeHpCheckbox_ = new QCheckBox(QStringLiteral("Write HP/UI field (offset 0x2AC)"), options);
-        hpPresetCheckbox_ = new QCheckBox(QStringLiteral("Preset HP/UI field"), options);
-        hpPresetCombo_ = new QComboBox(options);
-        hpPresetCombo_->setFixedWidth(118);
-        hpRandomCheckbox_ = new QCheckBox(QStringLiteral("Random HP/UI field"), options);
-        hpEdit_ = new QLineEdit(QStringLiteral("0x4000000"), options);
-        hpEdit_->setFixedWidth(118);
-
-        writeInfiniteRoundCheckbox_ = new QCheckBox(QStringLiteral("Write infinite round (offset 0x2B4)"), options);
-        infiniteRoundSpin_ = new QSpinBox(options);
-        infiniteRoundSpin_->setRange(0, 0xFFFFFFFF);
-        infiniteRoundSpin_->setFixedWidth(88);
-
-        roundTimerCheckbox_ = new QCheckBox(QStringLiteral("Write round timer (offset 0x2A0, seconds)"), options);
-        roundTimerSecondsSpin_ = new QSpinBox(options);
-        roundTimerSecondsSpin_->setRange(0, 1000000);
-        roundTimerSecondsSpin_->setValue(30);
-        roundTimerSecondsSpin_->setFixedWidth(88);
-        roundTimePresetCombo_ = new QComboBox(options);
-        roundTimePresetCombo_->setFixedWidth(170);
-
-        p1ControllerCheckbox_ = new QCheckBox(QStringLiteral("Set P1 state = controller (base+0x12DA338 = 0)"), options);
-        p2CpuCheckbox_ = new QCheckBox(QStringLiteral("Set P2 state = CPU (base+0x12DC7D8 = 1)"), options);
-        countersCheckbox_ = new QCheckBox(QStringLiteral("Force round counters (offsets 0x290 and 0x29C)"), options);
-
-        p1CounterSpin_ = new QSpinBox(options);
-        p1CounterSpin_->setRange(0, 99);
-        p1CounterSpin_->setFixedWidth(72);
-        p2CounterSpin_ = new QSpinBox(options);
-        p2CounterSpin_->setRange(0, 99);
-        p2CounterSpin_->setFixedWidth(72);
-        guardPauseMsSpin_ = new QSpinBox(options);
-        guardPauseMsSpin_->setRange(200, 10000);
-        guardPauseMsSpin_->setSingleStep(200);
-        guardPauseMsSpin_->setValue(2800);
+        valueWritesDialog_ = new QDialog(this);
+        Ui::ValueWritesDialog valueWritesUi;
+        valueWritesUi.setupUi(valueWritesDialog_);
+        writeModeCheckbox_ = valueWritesUi.writeModeCheckbox;
+        modePresetCombo_ = valueWritesUi.modePresetCombo;
+        writeHpCheckbox_ = valueWritesUi.writeHpCheckbox;
+        hpPresetCheckbox_ = valueWritesUi.hpPresetCheckbox;
+        hpPresetCombo_ = valueWritesUi.hpPresetCombo;
+        hpRandomCheckbox_ = valueWritesUi.hpRandomCheckbox;
+        hpEdit_ = valueWritesUi.hpEdit;
+        writeInfiniteRoundCheckbox_ = valueWritesUi.writeInfiniteRoundCheckbox;
+        infiniteRoundSpin_ = valueWritesUi.infiniteRoundSpin;
+        roundTimerCheckbox_ = valueWritesUi.roundTimerCheckbox;
+        roundTimerSecondsSpin_ = valueWritesUi.roundTimerSecondsSpin;
+        roundTimePresetCombo_ = valueWritesUi.roundTimePresetCombo;
 
         for (const auto& mode : kModePresets)
         {
@@ -695,97 +680,6 @@ public:
         guardPauseCheckbox_->setChecked(true);
         stabilizeCheckbox_->setChecked(true);
         roundTimePresetCombo_->setCurrentIndex(0);
-
-        runtimeDialog_ = new QDialog(this);
-        runtimeDialog_->setWindowTitle(QStringLiteral("Runtime"));
-        auto* runtimeDialogLayout = new QVBoxLayout(runtimeDialog_);
-        auto* runtimeBox = new QGroupBox(QStringLiteral("Runtime"), runtimeDialog_);
-        auto* runtimeLayout = new QVBoxLayout(runtimeBox);
-        runtimeLayout->setContentsMargins(8, 8, 8, 8);
-        runtimeLayout->setSpacing(5);
-
-        runtimeLayout->addWidget(lockCheckbox_);
-        runtimeLayout->addWidget(lockSelectionCheckbox_);
-        runtimeLayout->addWidget(autoDisableStageLockCheckbox_);
-
-        auto* guardRowWidget = new QWidget(runtimeBox);
-        auto* guardRow = new QHBoxLayout(guardRowWidget);
-        guardRow->setContentsMargins(0, 0, 0, 0);
-        guardRow->addWidget(guardPauseCheckbox_);
-        guardRow->addWidget(new QLabel(QStringLiteral("ms:"), runtimeBox));
-        guardRow->addWidget(guardPauseMsSpin_);
-        guardRow->addStretch(1);
-        runtimeLayout->addWidget(guardRowWidget);
-
-        runtimeLayout->addWidget(stabilizeCheckbox_);
-        runtimeLayout->addWidget(modeResetPulseCheckbox_);
-        runtimeLayout->addWidget(p1ControllerCheckbox_);
-        runtimeLayout->addWidget(p2CpuCheckbox_);
-
-        runtimeLayout->addWidget(countersCheckbox_);
-
-        auto* countersValueRow = new QWidget(runtimeBox);
-        auto* countersValueLayout = new QHBoxLayout(countersValueRow);
-        countersValueLayout->setContentsMargins(20, 0, 0, 0);
-        countersValueLayout->setSpacing(6);
-        countersValueLayout->addWidget(new QLabel(QStringLiteral("P1:"), runtimeBox));
-        countersValueLayout->addWidget(p1CounterSpin_);
-        countersValueLayout->addWidget(new QLabel(QStringLiteral("P2:"), runtimeBox));
-        countersValueLayout->addWidget(p2CounterSpin_);
-        countersValueLayout->addStretch(1);
-        runtimeLayout->addWidget(countersValueRow);
-        runtimeLayout->addStretch(1);
-        runtimeBox->setMinimumWidth(380);
-        runtimeBox->setMaximumWidth(std::max(430, static_cast<int>(runtimeBox->sizeHint().width() * 1.00)));
-        runtimeDialogLayout->addWidget(runtimeBox);
-
-        auto* runtimeDialogButtons = new QDialogButtonBox(QDialogButtonBox::Close, runtimeDialog_);
-        runtimeDialogLayout->addWidget(runtimeDialogButtons);
-        connect(runtimeDialogButtons, &QDialogButtonBox::rejected, runtimeDialog_, &QDialog::reject);
-
-        valueWritesDialog_ = new QDialog(this);
-        valueWritesDialog_->setWindowTitle(QStringLiteral("Value Writes"));
-        auto* valueWritesDialogLayout = new QVBoxLayout(valueWritesDialog_);
-        auto* valuesBox = new QGroupBox(QStringLiteral("Value Writes"), valueWritesDialog_);
-        auto* valuesGrid = new QGridLayout(valuesBox);
-        valuesGrid->setContentsMargins(8, 8, 8, 8);
-        valuesGrid->setHorizontalSpacing(2);
-        valuesGrid->setVerticalSpacing(2);
-        valuesGrid->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-
-        const int labelColumnWidth = std::max({
-            writeModeCheckbox_->sizeHint().width(),
-            writeHpCheckbox_->sizeHint().width(),
-            hpPresetCheckbox_->sizeHint().width(),
-            hpRandomCheckbox_->sizeHint().width(),
-            writeInfiniteRoundCheckbox_->sizeHint().width(),
-            roundTimerCheckbox_->sizeHint().width()});
-        valuesGrid->setColumnMinimumWidth(0, labelColumnWidth -12);
-
-        valuesGrid->addWidget(writeModeCheckbox_, 0, 0);
-        valuesGrid->addWidget(modePresetCombo_, 0, 1);
-
-        valuesGrid->addWidget(writeHpCheckbox_, 1, 0);
-
-        valuesGrid->addWidget(hpPresetCheckbox_, 2, 0);
-        valuesGrid->addWidget(hpPresetCombo_, 2, 1);
-        valuesGrid->addWidget(hpRandomCheckbox_, 3, 0);
-        valuesGrid->addWidget(hpEdit_, 3, 1);
-
-        valuesGrid->addWidget(writeInfiniteRoundCheckbox_, 4, 0);
-        valuesGrid->addWidget(infiniteRoundSpin_, 4, 1);
-
-        valuesGrid->addWidget(roundTimerCheckbox_, 5, 0);
-        valuesGrid->addWidget(roundTimerSecondsSpin_, 5, 1);
-        valuesGrid->addWidget(roundTimePresetCombo_, 6, 1);
-        valuesGrid->setRowStretch(7, 1);
-        valuesBox->setMinimumWidth(520);
-        valuesBox->setMaximumWidth(std::max(640, static_cast<int>(valuesBox->sizeHint().width() * 1.00)));
-        valueWritesDialogLayout->addWidget(valuesBox);
-
-        auto* valueWritesDialogButtons = new QDialogButtonBox(QDialogButtonBox::Close, valueWritesDialog_);
-        valueWritesDialogLayout->addWidget(valueWritesDialogButtons);
-        connect(valueWritesDialogButtons, &QDialogButtonBox::rejected, valueWritesDialog_, &QDialog::reject);
 
         setCentralWidget(root);
 
