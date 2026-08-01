@@ -38,7 +38,6 @@
     </item>
     <item>
     <layout class="QHBoxLayout" name="statusPanelsLayout" stretch="0,4,5">
-      <property name="alignment"><set>Qt::AlignTop</set></property>
       <item>
        <widget class="QGroupBox" name="connectionBox">
         <property name="title"><string>Connection</string></property>

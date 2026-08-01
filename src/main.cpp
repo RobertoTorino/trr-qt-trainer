@@ -396,6 +396,7 @@ public:
         AppLogger::initialize();
         Ui::MainWindow mainUi;
         mainUi.setupUi(this);
+        mainUi.statusPanelsLayout->setAlignment(Qt::AlignTop);
         const QString buildNumber = QString::number(BuildInfo::number).rightJustified(5, QLatin1Char('0'));
         setWindowTitle(QStringLiteral("TRR Qt Trainer %1-%2-%3 | %4 %5")
                    .arg(QString::fromLatin1(BuildInfo::version),
