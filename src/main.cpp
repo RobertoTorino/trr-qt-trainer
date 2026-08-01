@@ -39,6 +39,7 @@
 #include <QtCore/QJsonObject>
 #include <QtCore/QProcess>
 #include <QtCore/QRegularExpression>
+#include <QtCore/QSaveFile>
 #include <QtCore/QSettings>
 #include <QtCore/QTimer>
 #include <QtCore/QUrl>
@@ -545,12 +546,17 @@ public:
         statusLabel_ = new QLabel(QStringLiteral("Status: Not Attached"), connectionBox);
         pointerLabel_ = new QLabel(QStringLiteral("Battle Pointer: Unresolved"), connectionBox);
         connectionStatusLabel_ = new QLabel(QStringLiteral("Connection Status: Checking..."), connectionBox);
+        runningGameLabel_ = new QLabel(QStringLiteral("Game: Unknown"), connectionBox);
+        runningBuildLabel_ = new QLabel(QStringLiteral("Build: Unknown"), connectionBox);
         connectionLayout->addWidget(statusLabel_, 0, 0);
         connectionLayout->addWidget(pointerLabel_, 1, 0);
         connectionLayout->addWidget(connectionStatusLabel_, 2, 0);
-        connectionLayout->setRowStretch(3, 1);
-        connectionBox->setMaximumWidth(std::max(220, static_cast<int>(connectionBox->sizeHint().width() * 0.84)));
-        topBoxes->addWidget(connectionBox, 1);
+        connectionLayout->addWidget(runningGameLabel_, 3, 0);
+        connectionLayout->addWidget(runningBuildLabel_, 4, 0);
+        connectionLayout->setRowStretch(5, 1);
+        const int twoButtonColumnsWidth = (maxButtonWidth * 2) + buttonGrid->horizontalSpacing();
+        connectionBox->setFixedWidth(twoButtonColumnsWidth);
+        topBoxes->addWidget(connectionBox);
 
         auto* selectionBox = new QGroupBox(QStringLiteral("Selection"), root);
         auto* selectionForm = new QFormLayout(selectionBox);
@@ -582,8 +588,8 @@ public:
         selectionForm->addRow(QStringLiteral("Player 1"), p1Combo_);
         selectionForm->addRow(QStringLiteral("Player 2"), p2Combo_);
         selectionForm->addRow(QStringLiteral("Stage"), stageCombo_);
-        selectionBox->setMaximumWidth(std::max(320, static_cast<int>(selectionBox->sizeHint().width() * 1.00)));
-        topBoxes->addWidget(selectionBox, 5);
+        selectionBox->setMaximumWidth(300);
+        topBoxes->addWidget(selectionBox, 4);
 
         auto* monitorBox = new QGroupBox(QStringLiteral("Live Monitor"), root);
 
@@ -607,7 +613,8 @@ public:
         monitorGrid->addWidget(monitorUi_, 3, 0);
         monitorGrid->addWidget(monitorInf_, 3, 1);
         monitorGrid->addWidget(monitorGuard_, 4, 0, 1, 2);
-        monitorBox->setMaximumWidth(std::max(360, static_cast<int>(monitorBox->sizeHint().width() * 0.86)));
+        monitorBox->setMinimumWidth(440);
+        monitorBox->setMaximumWidth(560);
         topBoxes->addWidget(monitorBox, 5);
 
         layout->addLayout(topBoxes);
@@ -1006,19 +1013,119 @@ private:
 
     QString activeRpcs3Label() const
     {
-        if (rpcs3ActiveExeChoice_ == 1)
+        return rpcs3BuildForChoice(rpcs3ActiveExeChoice_);
+    }
+
+    QString rpcs3ExePathForChoice(int choice) const
+    {
+        if (choice == 1)
         {
-            return QStringLiteral("Latest");
+            return rpcs3LatestExePath_;
         }
-        if (rpcs3ActiveExeChoice_ == 2)
+        if (choice == 2)
         {
-            return QStringLiteral("Custom");
+            return rpcs3CustomExePath_;
         }
-        return QStringLiteral("0.0.13");
+        return rpcs3ExePath_;
+    }
+
+    QString rpcs3LabelForChoice(int choice) const
+    {
+        return rpcs3BuildForChoice(choice);
+    }
+
+    QString rpcs3BuildForChoice(int choice) const
+    {
+        if (choice == 1)
+        {
+            return rpcs3LatestBuild_;
+        }
+        if (choice == 2)
+        {
+            return rpcs3CustomBuild_;
+        }
+        return rpcs3Build_;
+    }
+
+    int rpcs3ChoiceForTitle(const QString& titleId) const
+    {
+        if (titleId.compare(QStringLiteral("NPUB31250"), Qt::CaseInsensitive) == 0)
+        {
+            return npub31250Rpcs3Choice_;
+        }
+        if (titleId.compare(QStringLiteral("NPJB00404"), Qt::CaseInsensitive) == 0)
+        {
+            return npjb00404Rpcs3Choice_;
+        }
+        return npeb01406Rpcs3Choice_;
+    }
+
+    QString rpcs3ConfigurationPath() const
+    {
+        return QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("config/rpcs3_config.json"));
     }
 
     void loadRpcs3PathSetting()
     {
+        const QString configurationPath = rpcs3ConfigurationPath();
+        QFile configurationFile(configurationPath);
+        if (configurationFile.open(QIODevice::ReadOnly))
+        {
+            QJsonParseError parseError{};
+            const QJsonDocument document = QJsonDocument::fromJson(configurationFile.readAll(), &parseError);
+            configurationFile.close();
+            if (parseError.error == QJsonParseError::NoError && document.isObject())
+            {
+                const QJsonObject root = document.object();
+                const QJsonObject emulators = root.value(QStringLiteral("emulators")).toObject();
+                const QJsonObject games = root.value(QStringLiteral("games")).toObject();
+                const auto loadEmulator = [&emulators](const QString& key,
+                                                       const QString& fallbackBuild,
+                                                       QString& path,
+                                                       QString& build) {
+                    const QJsonValue value = emulators.value(key);
+                    if (value.isObject())
+                    {
+                        const QJsonObject emulator = value.toObject();
+                        path = QDir::toNativeSeparators(emulator.value(QStringLiteral("path")).toString().trimmed());
+                        build = emulator.value(QStringLiteral("build")).toString(fallbackBuild).trimmed();
+                    }
+                    else
+                    {
+                        path = QDir::toNativeSeparators(value.toString().trimmed());
+                        build = fallbackBuild;
+                    }
+                };
+                loadEmulator(QStringLiteral("0.0.13"), QStringLiteral("0.0.13"), rpcs3ExePath_, rpcs3Build_);
+                loadEmulator(QStringLiteral("latest"), QStringLiteral("0.0.00"), rpcs3LatestExePath_, rpcs3LatestBuild_);
+                loadEmulator(QStringLiteral("custom"), QStringLiteral("0.0.00"), rpcs3CustomExePath_, rpcs3CustomBuild_);
+                rpcs3ActiveExeChoice_ = std::clamp(root.value(QStringLiteral("defaultEmulator")).toInt(0), 0, 2);
+
+                const auto loadGame = [&games](const QString& titleId, QString& gamePath, int& emulatorChoice, int defaultChoice) {
+                    const QJsonObject game = games.value(titleId).toObject();
+                    gamePath = QDir::toNativeSeparators(game.value(QStringLiteral("bootPath")).toString().trimmed());
+                    emulatorChoice = std::clamp(game.value(QStringLiteral("emulator")).toInt(defaultChoice), 0, 2);
+                };
+                loadGame(QStringLiteral("NPEB01406"), npeb01406GamePath_, npeb01406Rpcs3Choice_, 0);
+                loadGame(QStringLiteral("NPUB31250"), npub31250GamePath_, npub31250Rpcs3Choice_, 1);
+                loadGame(QStringLiteral("NPJB00404"), npjb00404GamePath_, npjb00404Rpcs3Choice_, 1);
+
+                refreshActiveGamePath();
+                syncRpcs3SessionPaths();
+                AppLogger::info(QStringLiteral("Loaded current RPCS3 configuration file '%1': default=%2; mappings=NPEB01406:%3, NPUB31250:%4, NPJB00404:%5")
+                                    .arg(QDir::toNativeSeparators(configurationPath),
+                                         activeRpcs3Label(),
+                                         rpcs3LabelForChoice(npeb01406Rpcs3Choice_),
+                                         rpcs3LabelForChoice(npub31250Rpcs3Choice_),
+                                         rpcs3LabelForChoice(npjb00404Rpcs3Choice_)));
+                return;
+            }
+
+            AppLogger::error(QStringLiteral("Invalid RPCS3 configuration file '%1': %2. Falling back to legacy settings.")
+                                 .arg(QDir::toNativeSeparators(configurationPath), parseError.errorString()));
+        }
+
+        // One-time migration for installations that predate rpcs3_config.json.
         QSettings settings(QStringLiteral("TekkenRevolutionReborn"), QStringLiteral("TRRQtTrainer"));
         rpcs3ExePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("rpcs3ExePath")).toString().trimmed());
         rpcs3LatestExePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("rpcs3LatestExePath")).toString().trimmed());
@@ -1036,6 +1143,10 @@ private:
             rpcs3ActiveExeChoice_ = 2;
         }
         rpcs3ActiveExeChoice_ = std::clamp(rpcs3ActiveExeChoice_, 0, 2);
+        const int latestDefault = rpcs3LatestExePath_.isEmpty() ? rpcs3ActiveExeChoice_ : 1;
+        npeb01406Rpcs3Choice_ = std::clamp(settings.value(QStringLiteral("npeb01406Rpcs3Choice"), 0).toInt(), 0, 2);
+        npub31250Rpcs3Choice_ = std::clamp(settings.value(QStringLiteral("npub31250Rpcs3Choice"), latestDefault).toInt(), 0, 2);
+        npjb00404Rpcs3Choice_ = std::clamp(settings.value(QStringLiteral("npjb00404Rpcs3Choice"), latestDefault).toInt(), 0, 2);
         npeb01406GamePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("npeb01406GamePath")).toString().trimmed());
         npub31250GamePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("npub31250GamePath")).toString().trimmed());
         npjb00404GamePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("npjb00404GamePath")).toString().trimmed());
@@ -1049,29 +1160,71 @@ private:
 
         refreshActiveGamePath();
         syncRpcs3SessionPaths();
-        AppLogger::info(QStringLiteral("Loaded RPCS3 configuration from '%1': active=%2; %3; %4; %5; %6; %7; %8")
+        AppLogger::info(QStringLiteral("Migrating legacy RPCS3 configuration from '%1': default=%2; mappings=NPEB01406:%3, NPUB31250:%4, NPJB00404:%5; %6; %7; %8; %9; %10; %11")
                             .arg(QDir::toNativeSeparators(settings.fileName()),
                                  activeRpcs3Label(),
-                                 pathDiagnostic(QStringLiteral("0.0.13"), rpcs3ExePath_),
-                                 pathDiagnostic(QStringLiteral("Latest"), rpcs3LatestExePath_),
-                                 pathDiagnostic(QStringLiteral("Custom"), rpcs3CustomExePath_),
-                                 pathDiagnostic(QStringLiteral("NPEB01406"), npeb01406GamePath_),
-                                 pathDiagnostic(QStringLiteral("NPUB31250"), npub31250GamePath_),
-                                 pathDiagnostic(QStringLiteral("NPJB00404"), npjb00404GamePath_)));
+                     rpcs3LabelForChoice(npeb01406Rpcs3Choice_),
+                     rpcs3LabelForChoice(npub31250Rpcs3Choice_),
+                     rpcs3LabelForChoice(npjb00404Rpcs3Choice_),
+                     pathDiagnostic(QStringLiteral("0.0.13"), rpcs3ExePath_),
+                     pathDiagnostic(QStringLiteral("Latest"), rpcs3LatestExePath_),
+                     pathDiagnostic(QStringLiteral("Custom"), rpcs3CustomExePath_),
+                     pathDiagnostic(QStringLiteral("NPEB01406"), npeb01406GamePath_),
+                     pathDiagnostic(QStringLiteral("NPUB31250"), npub31250GamePath_),
+                     pathDiagnostic(QStringLiteral("NPJB00404"), npjb00404GamePath_)));
+        saveRpcs3PathSetting();
     }
 
     void saveRpcs3PathSetting() const
     {
-        QSettings settings(QStringLiteral("TekkenRevolutionReborn"), QStringLiteral("TRRQtTrainer"));
-        settings.setValue(QStringLiteral("rpcs3ExePath"), rpcs3ExePath_.trimmed());
-        settings.setValue(QStringLiteral("rpcs3LatestExePath"), rpcs3LatestExePath_.trimmed());
-        settings.setValue(QStringLiteral("rpcs3CustomExePath"), rpcs3CustomExePath_.trimmed());
-        settings.setValue(QStringLiteral("rpcs3ActiveExeChoice"), rpcs3ActiveExeChoice_);
-        settings.setValue(QStringLiteral("npeb01406GamePath"), npeb01406GamePath_.trimmed());
-        settings.setValue(QStringLiteral("npub31250GamePath"), npub31250GamePath_.trimmed());
-        settings.setValue(QStringLiteral("npjb00404GamePath"), npjb00404GamePath_.trimmed());
-        // Keep this for compatibility with previous versions and logs.
-        settings.setValue(QStringLiteral("rpcs3GamePath"), rpcs3GamePath_.trimmed());
+        const auto emulatorObject = [](const QString& path, const QString& build) {
+            QJsonObject emulator;
+            emulator.insert(QStringLiteral("path"), path.trimmed());
+            emulator.insert(QStringLiteral("build"), build.trimmed());
+            return emulator;
+        };
+        QJsonObject emulators;
+        emulators.insert(QStringLiteral("0.0.13"), emulatorObject(rpcs3ExePath_, rpcs3Build_));
+        emulators.insert(QStringLiteral("latest"), emulatorObject(rpcs3LatestExePath_, rpcs3LatestBuild_));
+        emulators.insert(QStringLiteral("custom"), emulatorObject(rpcs3CustomExePath_, rpcs3CustomBuild_));
+
+        const auto gameObject = [](const QString& bootPath, int emulatorChoice) {
+            QJsonObject game;
+            game.insert(QStringLiteral("bootPath"), bootPath.trimmed());
+            game.insert(QStringLiteral("emulator"), emulatorChoice);
+            return game;
+        };
+        QJsonObject games;
+        games.insert(QStringLiteral("NPEB01406"), gameObject(npeb01406GamePath_, npeb01406Rpcs3Choice_));
+        games.insert(QStringLiteral("NPUB31250"), gameObject(npub31250GamePath_, npub31250Rpcs3Choice_));
+        games.insert(QStringLiteral("NPJB00404"), gameObject(npjb00404GamePath_, npjb00404Rpcs3Choice_));
+
+        QJsonObject root;
+        root.insert(QStringLiteral("version"), 2);
+        root.insert(QStringLiteral("defaultEmulator"), rpcs3ActiveExeChoice_);
+        root.insert(QStringLiteral("emulators"), emulators);
+        root.insert(QStringLiteral("games"), games);
+
+        const QString configurationPath = rpcs3ConfigurationPath();
+        QDir().mkpath(QFileInfo(configurationPath).absolutePath());
+        QSaveFile configurationFile(configurationPath);
+        if (!configurationFile.open(QIODevice::WriteOnly | QIODevice::Text))
+        {
+            AppLogger::error(QStringLiteral("Could not replace RPCS3 configuration file '%1': %2")
+                                 .arg(QDir::toNativeSeparators(configurationPath), configurationFile.errorString()));
+            return;
+        }
+
+        configurationFile.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+        if (!configurationFile.commit())
+        {
+            AppLogger::error(QStringLiteral("Could not commit RPCS3 configuration file '%1': %2")
+                                 .arg(QDir::toNativeSeparators(configurationPath), configurationFile.errorString()));
+            return;
+        }
+
+        AppLogger::info(QStringLiteral("Replaced current RPCS3 configuration file: %1")
+                            .arg(QDir::toNativeSeparators(configurationPath)));
     }
 
     void refreshActiveGamePath()
@@ -1120,39 +1273,61 @@ private:
 
         auto* v = new QVBoxLayout(&dlg);
         auto* row = new QHBoxLayout();
-        auto* label = new QLabel(QStringLiteral("RPCS3 0.013:"), &dlg);
+        auto* label = new QLabel(QStringLiteral("RPCS3"), &dlg);
+        auto* buildEdit = new QLineEdit(&dlg);
+        buildEdit->setInputMask(QStringLiteral("0.0.00;_"));
+        buildEdit->setPlaceholderText(QStringLiteral("0.0.00"));
+        buildEdit->setText(rpcs3Build_);
+        buildEdit->setFixedWidth(72);
         auto* pathEdit = new QLineEdit(&dlg);
         pathEdit->setText(rpcs3ExePath_);
         auto* browse = new QPushButton(QStringLiteral("Browse..."), &dlg);
         row->addWidget(label);
+        row->addWidget(buildEdit);
         row->addWidget(pathEdit, 1);
         row->addWidget(browse);
         v->addLayout(row);
 
         auto* latestRow = new QHBoxLayout();
-        auto* latestLabel = new QLabel(QStringLiteral("RPCS3 LATEST:"), &dlg);
+        auto* latestLabel = new QLabel(QStringLiteral("RPCS3"), &dlg);
+        auto* latestBuildEdit = new QLineEdit(&dlg);
+        latestBuildEdit->setInputMask(QStringLiteral("0.0.00;_"));
+        latestBuildEdit->setPlaceholderText(QStringLiteral("0.0.00"));
+        latestBuildEdit->setText(rpcs3LatestBuild_);
+        latestBuildEdit->setFixedWidth(72);
         auto* latestPathEdit = new QLineEdit(&dlg);
         latestPathEdit->setText(rpcs3LatestExePath_);
         auto* latestBrowse = new QPushButton(QStringLiteral("Browse..."), &dlg);
         latestRow->addWidget(latestLabel);
+        latestRow->addWidget(latestBuildEdit);
         latestRow->addWidget(latestPathEdit, 1);
         latestRow->addWidget(latestBrowse);
         v->addLayout(latestRow);
 
         auto* customRow = new QHBoxLayout();
-        auto* customLabel = new QLabel(QStringLiteral("RPCS3 CUSTOM:"), &dlg);
+        auto* customLabel = new QLabel(QStringLiteral("RPCS3"), &dlg);
+        auto* customBuildEdit = new QLineEdit(&dlg);
+        customBuildEdit->setInputMask(QStringLiteral("0.0.00;_"));
+        customBuildEdit->setPlaceholderText(QStringLiteral("0.0.00"));
+        customBuildEdit->setText(rpcs3CustomBuild_);
+        customBuildEdit->setFixedWidth(72);
         auto* customPathEdit = new QLineEdit(&dlg);
         customPathEdit->setText(rpcs3CustomExePath_);
         auto* customBrowse = new QPushButton(QStringLiteral("Browse..."), &dlg);
         customRow->addWidget(customLabel);
+        customRow->addWidget(customBuildEdit);
         customRow->addWidget(customPathEdit, 1);
         customRow->addWidget(customBrowse);
         v->addLayout(customRow);
 
         auto* activeRow = new QHBoxLayout();
-        auto* activeLabel = new QLabel(QStringLiteral("Game launch RPCS3:"), &dlg);
+        auto* activeLabel = new QLabel(QStringLiteral("Default RPCS3:"), &dlg);
         auto* activeCombo = new QComboBox(&dlg);
-        activeCombo->addItems({QStringLiteral("RPCS3 0.0.13"), QStringLiteral("RPCS3 Latest"), QStringLiteral("RPCS3 Custom")});
+        const QStringList emulatorLabels{
+            QStringLiteral("RPCS3 %1").arg(rpcs3Build_),
+            QStringLiteral("RPCS3 %1").arg(rpcs3LatestBuild_),
+            QStringLiteral("RPCS3 %1").arg(rpcs3CustomBuild_)};
+        activeCombo->addItems(emulatorLabels);
         activeCombo->setCurrentIndex(rpcs3ActiveExeChoice_);
         activeRow->addWidget(activeLabel);
         activeRow->addWidget(activeCombo, 1);
@@ -1163,8 +1338,12 @@ private:
         auto* npebEdit = new QLineEdit(&dlg);
         npebEdit->setText(npeb01406GamePath_);
         auto* npebBrowse = new QPushButton(QStringLiteral("Browse..."), &dlg);
+        auto* npebRpcs3Combo = new QComboBox(&dlg);
+        npebRpcs3Combo->addItems(emulatorLabels);
+        npebRpcs3Combo->setCurrentIndex(npeb01406Rpcs3Choice_);
         npebRow->addWidget(npebLabel);
         npebRow->addWidget(npebEdit, 1);
+        npebRow->addWidget(npebRpcs3Combo);
         npebRow->addWidget(npebBrowse);
         v->addLayout(npebRow);
 
@@ -1173,8 +1352,12 @@ private:
         auto* npubEdit = new QLineEdit(&dlg);
         npubEdit->setText(npub31250GamePath_);
         auto* npubBrowse = new QPushButton(QStringLiteral("Browse..."), &dlg);
+        auto* npubRpcs3Combo = new QComboBox(&dlg);
+        npubRpcs3Combo->addItems(emulatorLabels);
+        npubRpcs3Combo->setCurrentIndex(npub31250Rpcs3Choice_);
         npubRow->addWidget(npubLabel);
         npubRow->addWidget(npubEdit, 1);
+        npubRow->addWidget(npubRpcs3Combo);
         npubRow->addWidget(npubBrowse);
         v->addLayout(npubRow);
 
@@ -1183,16 +1366,22 @@ private:
         auto* npjbEdit = new QLineEdit(&dlg);
         npjbEdit->setText(npjb00404GamePath_);
         auto* npjbBrowse = new QPushButton(QStringLiteral("Browse..."), &dlg);
+        auto* npjbRpcs3Combo = new QComboBox(&dlg);
+        npjbRpcs3Combo->addItems(emulatorLabels);
+        npjbRpcs3Combo->setCurrentIndex(npjb00404Rpcs3Choice_);
         npjbRow->addWidget(npjbLabel);
         npjbRow->addWidget(npjbEdit, 1);
+        npjbRow->addWidget(npjbRpcs3Combo);
         npjbRow->addWidget(npjbBrowse);
         v->addLayout(npjbRow);
 
         auto* downloadRow = new QHBoxLayout();
         auto* download0013 = new QPushButton(QStringLiteral("Download RPCS3 0.0.13"), &dlg);
         auto* downloadLatest = new QPushButton(QStringLiteral("Download RPCS3 Latest"), &dlg);
+        auto* downloadCheatEngine = new QPushButton(QStringLiteral("Download CheatEngine"), &dlg);
         downloadRow->addWidget(download0013);
         downloadRow->addWidget(downloadLatest);
+        downloadRow->addWidget(downloadCheatEngine);
         downloadRow->addStretch(1);
         v->addLayout(downloadRow);
 
@@ -1242,7 +1431,10 @@ private:
             QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/RobertoTorino/rpcs3-trr")));
         });
         connect(downloadLatest, &QPushButton::clicked, &dlg, []() {
-            QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/RobertoTorino/rpcs3-rt")));
+            QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/RPCS3/rpcs3/releases")));
+        });
+        connect(downloadCheatEngine, &QPushButton::clicked, &dlg, []() {
+            QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/RobertoTorino/cheat-engine-7.2")));
         });
 
         const auto connectBrowse = [this, &dlg](QPushButton* browseButton, QLineEdit* targetEdit, const QString& title) {
@@ -1285,6 +1477,18 @@ private:
         const QString path = pathEdit->text().trimmed();
         const QString latestPath = latestPathEdit->text().trimmed();
         const QString customPath = customPathEdit->text().trimmed();
+        const QString build = buildEdit->text().trimmed();
+        const QString latestBuild = latestBuildEdit->text().trimmed();
+        const QString customBuild = customBuildEdit->text().trimmed();
+        const QRegularExpression buildPattern(QStringLiteral("^\\d\\.\\d\\.\\d{2}$"));
+        if (!buildPattern.match(build).hasMatch() ||
+            !buildPattern.match(latestBuild).hasMatch() ||
+            !buildPattern.match(customBuild).hasMatch())
+        {
+            AppLogger::error(QStringLiteral("RPCS3 configuration rejected: invalid build number format."));
+            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Every RPCS3 build must use the format 0.0.00."));
+            return;
+        }
         const int activeChoice = activeCombo->currentIndex();
         AppLogger::info(QStringLiteral("Validating RPCS3 configuration: active=%1; %2; %3; %4")
                             .arg(activeCombo->currentText(),
@@ -1317,6 +1521,26 @@ private:
         const QString npebPath = npebEdit->text().trimmed();
         const QString npubPath = npubEdit->text().trimmed();
         const QString npjbPath = npjbEdit->text().trimmed();
+        const std::array<int, 3> gameChoices{
+            npebRpcs3Combo->currentIndex(),
+            npubRpcs3Combo->currentIndex(),
+            npjbRpcs3Combo->currentIndex()};
+        const std::array<QString, 3> gamePaths{npebPath, npubPath, npjbPath};
+        const std::array<QString, 3> titleIds{
+            QStringLiteral("NPEB01406"),
+            QStringLiteral("NPUB31250"),
+            QStringLiteral("NPJB00404")};
+        for (std::size_t i = 0; i < gameChoices.size(); ++i)
+        {
+            if (!gamePaths[i].isEmpty() && executablePaths[static_cast<std::size_t>(gameChoices[i])].isEmpty())
+            {
+                AppLogger::error(QStringLiteral("RPCS3 configuration rejected: %1 maps to an empty executable slot.").arg(titleIds[i]));
+                QMessageBox::warning(this,
+                                     QStringLiteral("TRR Qt Trainer"),
+                                     QStringLiteral("%1 is assigned to an RPCS3 executable path that is empty.").arg(titleIds[i]));
+                return;
+            }
+        }
         if ((!npebPath.isEmpty() && !QFileInfo::exists(npebPath)) ||
             (!npubPath.isEmpty() && !QFileInfo::exists(npubPath)) ||
             (!npjbPath.isEmpty() && !QFileInfo::exists(npjbPath)))
@@ -1332,15 +1556,25 @@ private:
         rpcs3ExePath_ = QDir::toNativeSeparators(path);
         rpcs3LatestExePath_ = QDir::toNativeSeparators(latestPath);
         rpcs3CustomExePath_ = QDir::toNativeSeparators(customPath);
+        rpcs3Build_ = build;
+        rpcs3LatestBuild_ = latestBuild;
+        rpcs3CustomBuild_ = customBuild;
         rpcs3ActiveExeChoice_ = activeChoice;
+        npeb01406Rpcs3Choice_ = gameChoices[0];
+        npub31250Rpcs3Choice_ = gameChoices[1];
+        npjb00404Rpcs3Choice_ = gameChoices[2];
         npeb01406GamePath_ = QDir::toNativeSeparators(npebPath);
         npub31250GamePath_ = QDir::toNativeSeparators(npubPath);
         npjb00404GamePath_ = QDir::toNativeSeparators(npjbPath);
         refreshActiveGamePath();
         syncRpcs3SessionPaths();
         saveRpcs3PathSetting();
-        AppLogger::info(QStringLiteral("RPCS3 configuration saved: active=%1; %2")
-                    .arg(activeRpcs3Label(), pathDiagnostic(QStringLiteral("activeExe"), activeRpcs3ExePath())));
+        AppLogger::info(QStringLiteral("RPCS3 configuration saved: default=%1; mappings=NPEB01406:%2, NPUB31250:%3, NPJB00404:%4; %5")
+                    .arg(activeRpcs3Label(),
+                     rpcs3LabelForChoice(npeb01406Rpcs3Choice_),
+                     rpcs3LabelForChoice(npub31250Rpcs3Choice_),
+                     rpcs3LabelForChoice(npjb00404Rpcs3Choice_),
+                     pathDiagnostic(QStringLiteral("defaultExe"), activeRpcs3ExePath())));
         statusLabel_->setText(QStringLiteral("Status: RPCS3 config saved"));
     }
 
@@ -1380,18 +1614,15 @@ private:
 
         if (choice == 0)
         {
-            rpcs3ActiveExeChoice_ = 0;
-            startRpcs3(rpcs3ExePath_, QStringLiteral("RPCS3 0.0.13"));
+            startRpcs3(rpcs3ExePath_, QStringLiteral("RPCS3 %1").arg(rpcs3Build_), 0);
         }
         else if (choice == 1)
         {
-            rpcs3ActiveExeChoice_ = 1;
-            startRpcs3(rpcs3LatestExePath_, QStringLiteral("RPCS3 Latest"));
+            startRpcs3(rpcs3LatestExePath_, QStringLiteral("RPCS3 %1").arg(rpcs3LatestBuild_), 1);
         }
         else if (choice == 2)
         {
-            rpcs3ActiveExeChoice_ = 2;
-            startRpcs3(rpcs3CustomExePath_, QStringLiteral("RPCS3 Custom"));
+            startRpcs3(rpcs3CustomExePath_, QStringLiteral("RPCS3 %1").arg(rpcs3CustomBuild_), 2);
         }
     }
 
@@ -1443,11 +1674,10 @@ private:
         }
     }
 
-    bool startRpcs3(const QString& emulatorPath, const QString& versionName)
+    bool startRpcs3(const QString& emulatorPath, const QString& versionName, int emulatorChoice)
     {
         rpcs3Session_.setEmulatorPath(emulatorPath);
         rpcs3Session_.setGamePath(rpcs3GamePath_);
-        saveRpcs3PathSetting();
         AppLogger::info(QStringLiteral("Start %1 requested. exe=%2").arg(versionName, emulatorPath));
         QString error;
         if (!rpcs3Session_.startEmulator(&error))
@@ -1458,6 +1688,8 @@ private:
         }
 
         AppLogger::info(QStringLiteral("Start %1 launch requested successfully.").arg(versionName));
+        runningGameLabel_->setText(QStringLiteral("Game: Unknown"));
+        runningBuildLabel_->setText(QStringLiteral("Build: %1").arg(rpcs3BuildForChoice(emulatorChoice)));
         statusLabel_->setText(QStringLiteral("Status: %1 launch requested").arg(versionName));
         return true;
     }
@@ -1465,7 +1697,6 @@ private:
     bool resetEmulator()
     {
         syncRpcs3SessionPaths();
-        saveRpcs3PathSetting();
         AppLogger::info(QStringLiteral("Reset RPCS3 requested. active=%1 exe=%2")
                     .arg(activeRpcs3Label(), activeRpcs3ExePath()));
         stopRuntimeWrites(false);
@@ -1490,17 +1721,22 @@ private:
         updateLiveMonitor();
 
         AppLogger::info(QStringLiteral("Reset RPCS3 launch requested successfully."));
+        runningGameLabel_->setText(QStringLiteral("Game: Unknown"));
+        runningBuildLabel_->setText(QStringLiteral("Build: %1").arg(activeRpcs3Label()));
         statusLabel_->setText(QStringLiteral("Status: RPCS3 reset requested"));
         return true;
     }
 
     bool startConfiguredGame(const QString& gamePath, const QString& titleId)
     {
+        const int emulatorChoice = rpcs3ChoiceForTitle(titleId);
+        const QString emulatorPath = rpcs3ExePathForChoice(emulatorChoice);
         rpcs3GamePath_ = QDir::toNativeSeparators(gamePath.trimmed());
-        syncRpcs3SessionPaths();
-        saveRpcs3PathSetting();
+        lastLaunchedTitleId_ = titleId;
+        rpcs3Session_.setEmulatorPath(emulatorPath);
+        rpcs3Session_.setGamePath(rpcs3GamePath_);
         AppLogger::info(QStringLiteral("Start %1 requested. active=%2 exe=%3 target=%4")
-                    .arg(titleId, activeRpcs3Label(), activeRpcs3ExePath(), rpcs3GamePath_));
+                            .arg(titleId, rpcs3LabelForChoice(emulatorChoice), emulatorPath, rpcs3GamePath_));
         QString error;
         if (!rpcs3Session_.startGame(&error))
         {
@@ -1510,6 +1746,8 @@ private:
         }
 
         AppLogger::info(QStringLiteral("Start %1 launch requested successfully.").arg(titleId));
+        runningGameLabel_->setText(QStringLiteral("Game: %1").arg(titleId));
+        runningBuildLabel_->setText(QStringLiteral("Build: %1").arg(rpcs3BuildForChoice(emulatorChoice)));
         statusLabel_->setText(QStringLiteral("Status: %1 launch requested").arg(titleId));
 
         QTimer::singleShot(1500, this, [this]() {
@@ -1529,7 +1767,6 @@ private:
     bool terminateRpcs3()
     {
         syncRpcs3SessionPaths();
-        saveRpcs3PathSetting();
         AppLogger::info(QStringLiteral("Terminate RPCS3 requested."));
         stopRuntimeWrites(false);
         if (process_ != nullptr)
@@ -1553,16 +1790,22 @@ private:
         updateLiveMonitor();
 
         AppLogger::info(QStringLiteral("Terminate RPCS3 completed."));
+        runningGameLabel_->setText(QStringLiteral("Game: Unknown"));
+        runningBuildLabel_->setText(QStringLiteral("Build: Unknown"));
         statusLabel_->setText(QStringLiteral("Status: RPCS3 terminated"));
         return true;
     }
 
     bool restartConfiguredGame()
     {
-        syncRpcs3SessionPaths();
-        saveRpcs3PathSetting();
+        const int emulatorChoice = lastLaunchedTitleId_.isEmpty()
+                                       ? rpcs3ActiveExeChoice_
+                                       : rpcs3ChoiceForTitle(lastLaunchedTitleId_);
+        const QString emulatorPath = rpcs3ExePathForChoice(emulatorChoice);
+        rpcs3Session_.setEmulatorPath(emulatorPath);
+        rpcs3Session_.setGamePath(rpcs3GamePath_);
         AppLogger::info(QStringLiteral("Restart Game requested. active=%1 exe=%2 target=%3")
-                    .arg(activeRpcs3Label(), activeRpcs3ExePath(), rpcs3GamePath_));
+                            .arg(rpcs3LabelForChoice(emulatorChoice), emulatorPath, rpcs3GamePath_));
         stopRuntimeWrites(false);
         if (process_ != nullptr)
         {
@@ -1579,6 +1822,10 @@ private:
         }
 
         AppLogger::info(QStringLiteral("Restart Game launch requested successfully."));
+        runningGameLabel_->setText(lastLaunchedTitleId_.isEmpty()
+                                       ? QStringLiteral("Game: Unknown")
+                                       : QStringLiteral("Game: %1").arg(lastLaunchedTitleId_));
+        runningBuildLabel_->setText(QStringLiteral("Build: %1").arg(rpcs3BuildForChoice(emulatorChoice)));
         statusLabel_->setText(QStringLiteral("Status: game restart requested"));
         stageLockArmed_ = true;
 
@@ -1975,6 +2222,8 @@ private:
         if (!pid.has_value())
         {
             AppLogger::warn(QStringLiteral("Attach failed: RPCS3 process not found."));
+            runningGameLabel_->setText(QStringLiteral("Game: Unknown"));
+            runningBuildLabel_->setText(QStringLiteral("Build: Unknown"));
             statusLabel_->setText(QStringLiteral("Status: RPCS3 process not found"));
             attachButton_->setChecked(false);
             attachButton_->setText(QStringLiteral("Attach RPCS3"));
@@ -2012,6 +2261,8 @@ private:
 
         battlePtr_ = 0;
         pointerLabel_->setText(QStringLiteral("Battle Pointer: Unresolved"));
+        runningGameLabel_->setText(QStringLiteral("Game: Unknown"));
+        runningBuildLabel_->setText(QStringLiteral("Build: Unknown"));
         statusLabel_->setText(QStringLiteral("Status: Detached"));
         attachButton_->setChecked(false);
         attachButton_->setText(QStringLiteral("Attach RPCS3"));
@@ -2997,8 +3248,15 @@ private:
     QString rpcs3ExePath_;
     QString rpcs3LatestExePath_;
     QString rpcs3CustomExePath_;
+    QString rpcs3Build_ = QStringLiteral("0.0.13");
+    QString rpcs3LatestBuild_ = QStringLiteral("0.0.00");
+    QString rpcs3CustomBuild_ = QStringLiteral("0.0.00");
     int rpcs3ActiveExeChoice_ = 0;
+    int npeb01406Rpcs3Choice_ = 0;
+    int npub31250Rpcs3Choice_ = 1;
+    int npjb00404Rpcs3Choice_ = 1;
     QString rpcs3GamePath_;
+    QString lastLaunchedTitleId_;
     QString npeb01406GamePath_;
     QString npub31250GamePath_;
     QString npjb00404GamePath_;
@@ -3007,6 +3265,8 @@ private:
     QLabel* statusLabel_ = nullptr;
     QLabel* pointerLabel_ = nullptr;
     QLabel* connectionStatusLabel_ = nullptr;
+    QLabel* runningGameLabel_ = nullptr;
+    QLabel* runningBuildLabel_ = nullptr;
 
     QComboBox* p1Combo_ = nullptr;
     QComboBox* p2Combo_ = nullptr;
