@@ -3217,6 +3217,7 @@ private:
 int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
+    app.setWindowIcon(QIcon(QStringLiteral(":/icons/trr-qt-trainer.png")));
     MainWindow w;
     w.show();
     return app.exec();

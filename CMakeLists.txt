@@ -72,10 +72,15 @@ add_executable(trr_qt_trainer WIN32
     src/main.cpp
     src/rpcs3_session_controller.cpp
     src/rpcs3_session_controller.h
+    src/resources/app_resources.qrc
     src/ui/main_window.ui
     src/ui/runtime_dialog.ui
     src/ui/value_writes_dialog.ui
 )
+
+if (WIN32)
+    target_sources(trr_qt_trainer PRIVATE src/resources/app_icon.rc)
+endif()
 
 target_link_libraries(trr_qt_trainer PRIVATE Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Widgets)
 target_include_directories(trr_qt_trainer PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")

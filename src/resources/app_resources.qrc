@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file alias="trr-qt-trainer.png">../../assets/images/trr-qt-trainer.png</file>
+    </qresource>
+</RCC>
