@@ -64,6 +64,14 @@ Executable:
 
 The executable is built as a Windows GUI app (no console window).
 
+The title bar includes reproducible build metadata:
+
+```text
+TRR Qt Trainer 0.0.00-00000-5295f3ac | release main
+```
+
+Local builds use the Git commit count, short commit SHA, current branch, and the `local` channel. CI overrides these through the CMake cache variables `TRR_VERSION`, `TRR_BUILD_NUMBER`, `TRR_COMMIT_SHA`, `TRR_BUILD_CHANNEL`, and `TRR_BUILD_BRANCH`.
+
 Run directly (without deployment):
 
 ```powershell

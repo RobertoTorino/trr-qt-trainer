@@ -1,0 +1,108 @@
+name: Build TRR Qt Trainer Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Display version (for example 0.0.00)
+        required: true
+        default: 0.0.00
+  push:
+    tags:
+      - "trr-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && 'main' || github.ref }}
+          fetch-depth: 0
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.8.3"
+          arch: win64_msvc2022_64
+          cache: true
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Resolve build metadata
+        shell: pwsh
+        run: |
+          $version = "${{ inputs.version }}"
+          if ("${{ github.ref_type }}" -eq "tag") {
+            $version = "${{ github.ref_name }}" -replace '^trr-v', ''
+          }
+          if ([string]::IsNullOrWhiteSpace($version)) {
+            $version = "0.0.00"
+          }
+          $shortSha = "${env:GITHUB_SHA}".Substring(0, 8)
+
+          "TRR_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "TRR_SHORT_SHA=$shortSha" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Configure and build
+        shell: pwsh
+        run: |
+          cmake -S . -B build-ci -G "Visual Studio 17 2022" -A x64 `
+            "-DTRR_VERSION=$env:TRR_VERSION" `
+            "-DTRR_BUILD_NUMBER=${{ github.run_number }}" `
+            "-DTRR_COMMIT_SHA=$env:TRR_SHORT_SHA" `
+            -DTRR_BUILD_CHANNEL=release `
+            -DTRR_BUILD_BRANCH=main
+          cmake --build build-ci --config Release --parallel
+
+      - name: Package portable application
+        id: package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $shortSha = "${env:GITHUB_SHA}".Substring(0, 8)
+          $packageBase = "trr-qt-trainer-$env:TRR_VERSION-${{ github.run_number }}-$shortSha-win64"
+          $stagingDir = Join-Path $env:RUNNER_TEMP $packageBase
+          $binDir = Join-Path $stagingDir "bin"
+          New-Item -ItemType Directory -Force -Path $binDir | Out-Null
+
+          $exePath = Join-Path $env:GITHUB_WORKSPACE "build-ci\Release\trr_qt_trainer.exe"
+          Copy-Item $exePath $binDir
+          windeployqt --release --compiler-runtime --dir $binDir (Join-Path $binDir "trr_qt_trainer.exe")
+
+          Copy-Item assets, presets -Destination $stagingDir -Recurse -Force
+          Copy-Item README.md, README_AUTOMATION.md -Destination $stagingDir -Force
+
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          $zipPath = Join-Path release "$packageBase.zip"
+          Compress-Archive -Path (Join-Path $stagingDir "*") -DestinationPath $zipPath -CompressionLevel Optimal
+          $hashPath = "$zipPath.sha256"
+          (Get-FileHash $zipPath -Algorithm SHA256).Hash.ToLowerInvariant() | Set-Content $hashPath -NoNewline
+
+          "zip=$zipPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "sha256=$hashPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trr-qt-trainer-windows-release
+          path: |
+            ${{ steps.package.outputs.zip }}
+            ${{ steps.package.outputs.sha256 }}
+          if-no-files-found: error
+
+      - name: Publish GitHub Release assets
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ steps.package.outputs.zip }}
+            ${{ steps.package.outputs.sha256 }}
+          generate_release_notes: true

@@ -62,7 +62,9 @@
 #include <dwmapi.h>
 
 #include "app_logger.h"
+#include "build_info.h"
 #include "rpcs3_session_controller.h"
+#include "ui_main_window.h"
 #include "ui_runtime_dialog.h"
 #include "ui_value_writes_dialog.h"
 
@@ -392,43 +394,58 @@ public:
     MainWindow()
     {
         AppLogger::initialize();
-        setWindowTitle(QStringLiteral("TRR Qt Trainer"));
-        resize(1280, 760);
+        Ui::MainWindow mainUi;
+        mainUi.setupUi(this);
+        const QString buildNumber = QString::number(BuildInfo::number).rightJustified(5, QLatin1Char('0'));
+        setWindowTitle(QStringLiteral("TRR Qt Trainer %1-%2-%3 | %4 %5")
+                   .arg(QString::fromLatin1(BuildInfo::version),
+                    buildNumber,
+                    QString::fromLatin1(BuildInfo::commitSha),
+                    QString::fromLatin1(BuildInfo::channel),
+                    QString::fromLatin1(BuildInfo::branch)));
 
-        auto* root = new QWidget(this);
-        auto* layout = new QVBoxLayout(root);
+        attachButton_ = mainUi.attachButton;
+        applyButton_ = mainUi.applyButton;
+        startRpcs3Button_ = mainUi.startRpcs3Button;
+        startGameButton_ = mainUi.startGameButton;
+        restartGameButton_ = mainUi.restartGameButton;
+        resetEmulatorButton_ = mainUi.resetEmulatorButton;
+        terminateRpcs3Button_ = mainUi.terminateRpcs3Button;
+        rpcs3ConfigButton_ = mainUi.rpcs3ConfigButton;
+        snapshotButton_ = mainUi.snapshotButton;
+        trManualButton_ = mainUi.trManualButton;
+        e3Button_ = mainUi.e3Button;
+        showLogsButton_ = mainUi.showLogsButton;
+        tutorialButton_ = mainUi.tutorialButton;
+        refreshButton_ = mainUi.refreshButton;
+        readLiveButton_ = mainUi.readLiveButton;
+        stopLockButton_ = mainUi.stopLockButton;
+        savePresetButton_ = mainUi.savePresetButton;
+        loadPresetButton_ = mainUi.loadPresetButton;
+        profileConservativeButton_ = mainUi.profileConservativeButton;
+        profileBalancedButton_ = mainUi.profileBalancedButton;
+        profileAggressiveButton_ = mainUi.profileAggressiveButton;
+        runtimeButton_ = mainUi.runtimeButton;
+        valueWritesButton_ = mainUi.valueWritesButton;
+        advancedMemoryButton_ = mainUi.advancedMemoryButton;
 
-        auto* buttonRows = new QVBoxLayout();
-        buttonRows->setSpacing(3);
-        auto* buttonGrid = new QGridLayout();
-        buttonGrid->setHorizontalSpacing(6);
-        buttonGrid->setVerticalSpacing(6);
-        buttonGrid->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-        attachButton_ = new QPushButton(QStringLiteral("Attach RPCS3"), root);
-        attachButton_->setCheckable(true);
-        startRpcs3Button_ = new QPushButton(QStringLiteral("Start RPCS3"), root);
-        startGameButton_ = new QPushButton(QStringLiteral("Start Game"), root);
-        restartGameButton_ = new QPushButton(QStringLiteral("Restart Game"), root);
-        resetEmulatorButton_ = new QPushButton(QStringLiteral("Reset RPCS3"), root);
-        terminateRpcs3Button_ = new QPushButton(QStringLiteral("Terminate RPCS3"), root);
-        rpcs3ConfigButton_ = new QPushButton(QStringLiteral("RPCS3 Config"), root);
-        snapshotButton_ = new QPushButton(QStringLiteral("Snapshot"), root);
-        trManualButton_ = new QPushButton(QStringLiteral("TR Manual"), root);
-        e3Button_ = new QPushButton(QStringLiteral("E3 2013"), root);
-        tutorialButton_ = new QPushButton(QStringLiteral("Build/Tutorial"), root);
-        refreshButton_ = new QPushButton(QStringLiteral("Refresh Pointer"), root);
-        applyButton_ = new QPushButton(QStringLiteral("Apply Once"), root);
-        readLiveButton_ = new QPushButton(QStringLiteral("Read Live Values"), root);
-        stopLockButton_ = new QPushButton(QStringLiteral("Stop Lock"), root);
-        profileConservativeButton_ = new QPushButton(QStringLiteral("Preset Conservative"), root);
-        profileBalancedButton_ = new QPushButton(QStringLiteral("Preset Balanced"), root);
-        profileAggressiveButton_ = new QPushButton(QStringLiteral("Preset Aggressive"), root);
-        savePresetButton_ = new QPushButton(QStringLiteral("Save Preset"), root);
-        loadPresetButton_ = new QPushButton(QStringLiteral("Load Preset"), root);
-        showLogsButton_ = new QPushButton(QStringLiteral("Show Logs"), root);
-        advancedMemoryButton_ = new QPushButton(QStringLiteral("Advanced Memory"), root);
-        runtimeButton_ = new QPushButton(QStringLiteral("Runtime"), root);
-        valueWritesButton_ = new QPushButton(QStringLiteral("Value Writes"), root);
+        statusLabel_ = mainUi.statusLabel;
+        pointerLabel_ = mainUi.pointerLabel;
+        connectionStatusLabel_ = mainUi.connectionStatusLabel;
+        runningGameLabel_ = mainUi.runningGameLabel;
+        runningBuildLabel_ = mainUi.runningBuildLabel;
+        p1Combo_ = mainUi.p1Combo;
+        p2Combo_ = mainUi.p2Combo;
+        stageCombo_ = mainUi.stageCombo;
+        monitorP1Id_ = mainUi.monitorP1Id;
+        monitorP2Id_ = mainUi.monitorP2Id;
+        monitorStage_ = mainUi.monitorStage;
+        monitorState_ = mainUi.monitorState;
+        monitorTimer_ = mainUi.monitorTimer;
+        monitorCounters_ = mainUi.monitorCounters;
+        monitorUi_ = mainUi.monitorUi;
+        monitorInf_ = mainUi.monitorInf;
+        monitorGuard_ = mainUi.monitorGuard;
 
         std::array<QPushButton*, 24> topButtons{{
             attachButton_,
@@ -526,45 +543,8 @@ public:
             button->setFixedSize(maxButtonWidth, maxButtonHeight);
         }
 
-        constexpr int kTopButtonColumns = 6;
-        for (int i = 0; i < static_cast<int>(topButtons.size()); ++i)
-        {
-            const int row = i / kTopButtonColumns;
-            const int col = i % kTopButtonColumns;
-            buttonGrid->addWidget(topButtons[static_cast<std::size_t>(i)], row, col);
-        }
-
-        buttonRows->addLayout(buttonGrid);
-        layout->addLayout(buttonRows);
-
-        auto* topBoxes = new QHBoxLayout();
-        topBoxes->setAlignment(Qt::AlignTop);
-        auto* connectionBox = new QGroupBox(QStringLiteral("Connection"), root);
-
-        auto* connectionLayout = new QGridLayout(connectionBox);
-        connectionLayout->setContentsMargins(8, 10, 8, 8);
-        connectionLayout->setVerticalSpacing(2);
-        connectionLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-        statusLabel_ = new QLabel(QStringLiteral("Status: Not Attached"), connectionBox);
-        pointerLabel_ = new QLabel(QStringLiteral("Battle Pointer: Unresolved"), connectionBox);
-        connectionStatusLabel_ = new QLabel(QStringLiteral("Connection Status: Checking..."), connectionBox);
-        runningGameLabel_ = new QLabel(QStringLiteral("Game: Unknown"), connectionBox);
-        runningBuildLabel_ = new QLabel(QStringLiteral("Build: Unknown"), connectionBox);
-        connectionLayout->addWidget(statusLabel_, 0, 0);
-        connectionLayout->addWidget(pointerLabel_, 1, 0);
-        connectionLayout->addWidget(connectionStatusLabel_, 2, 0);
-        connectionLayout->addWidget(runningGameLabel_, 3, 0);
-        connectionLayout->addWidget(runningBuildLabel_, 4, 0);
-        connectionLayout->setRowStretch(5, 1);
-        const int twoButtonColumnsWidth = (maxButtonWidth * 2) + buttonGrid->horizontalSpacing();
-        connectionBox->setFixedWidth(twoButtonColumnsWidth);
-        topBoxes->addWidget(connectionBox);
-
-        auto* selectionBox = new QGroupBox(QStringLiteral("Selection"), root);
-        auto* selectionForm = new QFormLayout(selectionBox);
-        p1Combo_ = new QComboBox(selectionBox);
-        p2Combo_ = new QComboBox(selectionBox);
-        stageCombo_ = new QComboBox(selectionBox);
+        const int twoButtonColumnsWidth = (maxButtonWidth * 2) + mainUi.buttonGrid->horizontalSpacing();
+        mainUi.connectionBox->setFixedWidth(twoButtonColumnsWidth);
 
         for (const auto& c : kCharacters)
         {
@@ -586,40 +566,6 @@ public:
                 stageCombo_->setCurrentIndex(defaultStageIdx); // 02 - Eternal Paradise
             }
         }
-
-        selectionForm->addRow(QStringLiteral("Player 1"), p1Combo_);
-        selectionForm->addRow(QStringLiteral("Player 2"), p2Combo_);
-        selectionForm->addRow(QStringLiteral("Stage"), stageCombo_);
-        selectionBox->setMaximumWidth(300);
-        topBoxes->addWidget(selectionBox, 4);
-
-        auto* monitorBox = new QGroupBox(QStringLiteral("Live Monitor"), root);
-
-        auto* monitorGrid = new QGridLayout(monitorBox);
-        monitorP1Id_ = new QLabel(QStringLiteral("P1 ID: n/a"), monitorBox);
-        monitorP2Id_ = new QLabel(QStringLiteral("P2 ID: n/a"), monitorBox);
-        monitorStage_ = new QLabel(QStringLiteral("Stage ID: n/a"), monitorBox);
-        monitorState_ = new QLabel(QStringLiteral("Game state: n/a"), monitorBox);
-        monitorTimer_ = new QLabel(QStringLiteral("Round timer: n/a"), monitorBox);
-        monitorCounters_ = new QLabel(QStringLiteral("Counters P1/P2: n/a"), monitorBox);
-        monitorUi_ = new QLabel(QStringLiteral("UI flags: n/a"), monitorBox);
-        monitorInf_ = new QLabel(QStringLiteral("Infinite round: n/a"), monitorBox);
-        monitorGuard_ = new QLabel(QStringLiteral("Guard: lock disabled"), monitorBox);
-
-        monitorGrid->addWidget(monitorP1Id_, 0, 0);
-        monitorGrid->addWidget(monitorP2Id_, 0, 1);
-        monitorGrid->addWidget(monitorStage_, 1, 0);
-        monitorGrid->addWidget(monitorState_, 1, 1);
-        monitorGrid->addWidget(monitorTimer_, 2, 0);
-        monitorGrid->addWidget(monitorCounters_, 2, 1);
-        monitorGrid->addWidget(monitorUi_, 3, 0);
-        monitorGrid->addWidget(monitorInf_, 3, 1);
-        monitorGrid->addWidget(monitorGuard_, 4, 0, 1, 2);
-        monitorBox->setMinimumWidth(440);
-        monitorBox->setMaximumWidth(560);
-        topBoxes->addWidget(monitorBox, 5);
-
-        layout->addLayout(topBoxes);
 
         runtimeDialog_ = new QDialog(this);
         Ui::RuntimeDialog runtimeUi;
@@ -680,8 +626,6 @@ public:
         guardPauseCheckbox_->setChecked(true);
         stabilizeCheckbox_->setChecked(true);
         roundTimePresetCombo_->setCurrentIndex(0);
-
-        setCentralWidget(root);
 
         const auto applyToggleStyle = [](QCheckBox* box) {
             if (box == nullptr)
