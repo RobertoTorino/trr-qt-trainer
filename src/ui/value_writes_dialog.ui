@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ValueWritesDialog</class>
+ <widget class="QDialog" name="ValueWritesDialog">
+  <property name="windowTitle"><string>Value Writes</string></property>
+  <layout class="QVBoxLayout" name="dialogLayout">
+   <item>
+    <widget class="QGroupBox" name="valuesBox">
+     <property name="minimumSize"><size><width>520</width><height>0</height></size></property>
+     <property name="title"><string>Value Writes</string></property>
+     <layout class="QGridLayout" name="valuesGrid">
+      <property name="horizontalSpacing"><number>8</number></property>
+      <property name="verticalSpacing"><number>4</number></property>
+      <item row="0" column="0"><widget class="QCheckBox" name="writeModeCheckbox"><property name="text"><string>Write game mode (offset 0x178)</string></property></widget></item>
+      <item row="0" column="1"><widget class="QComboBox" name="modePresetCombo"><property name="minimumSize"><size><width>230</width><height>0</height></size></property></widget></item>
+      <item row="1" column="0"><widget class="QCheckBox" name="writeHpCheckbox"><property name="text"><string>Write HP/UI field (offset 0x2AC)</string></property></widget></item>
+      <item row="2" column="0"><widget class="QCheckBox" name="hpPresetCheckbox"><property name="text"><string>Preset HP/UI field</string></property></widget></item>
+      <item row="2" column="1"><widget class="QComboBox" name="hpPresetCombo"><property name="minimumSize"><size><width>118</width><height>0</height></size></property></widget></item>
+      <item row="3" column="0"><widget class="QCheckBox" name="hpRandomCheckbox"><property name="text"><string>Random HP/UI field</string></property></widget></item>
+      <item row="3" column="1"><widget class="QLineEdit" name="hpEdit"><property name="text"><string>0x4000000</string></property></widget></item>
+      <item row="4" column="0"><widget class="QCheckBox" name="writeInfiniteRoundCheckbox"><property name="text"><string>Write infinite round (offset 0x2B4)</string></property></widget></item>
+      <item row="4" column="1"><widget class="QSpinBox" name="infiniteRoundSpin"><property name="maximum"><number>2147483647</number></property></widget></item>
+      <item row="5" column="0"><widget class="QCheckBox" name="roundTimerCheckbox"><property name="text"><string>Write round timer (offset 0x2A0, seconds)</string></property></widget></item>
+      <item row="5" column="1"><widget class="QSpinBox" name="roundTimerSecondsSpin"><property name="maximum"><number>1000000</number></property><property name="value"><number>30</number></property></widget></item>
+      <item row="6" column="1"><widget class="QComboBox" name="roundTimePresetCombo"><property name="minimumSize"><size><width>170</width><height>0</height></size></property></widget></item>
+      <item row="7" column="0"><spacer name="verticalSpacer"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>20</height></size></property></spacer></item>
+     </layout>
+    </widget>
+   </item>
+   <item><widget class="QDialogButtonBox" name="dialogButtonBox"><property name="standardButtons"><set>QDialogButtonBox::Close</set></property></widget></item>
+  </layout>
+ </widget>
+ <connections>
+  <connection><sender>dialogButtonBox</sender><signal>rejected()</signal><receiver>ValueWritesDialog</receiver><slot>reject()</slot></connection>
+ </connections>
+</ui>

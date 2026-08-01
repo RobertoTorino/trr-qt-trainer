@@ -1,0 +1,80 @@
+name: Build TRR Qt Trainer Nightly
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows-nightly:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout develop
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.8.3"
+          arch: win64_msvc2022_64
+          cache: true
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Configure and build
+        shell: pwsh
+        run: |
+          $shortSha = "${env:GITHUB_SHA}".Substring(0, 8)
+          cmake -S . -B build-ci -G "Visual Studio 17 2022" -A x64 `
+            -DTRR_VERSION=0.0.00 `
+            "-DTRR_BUILD_NUMBER=${{ github.run_number }}" `
+            "-DTRR_COMMIT_SHA=$shortSha" `
+            -DTRR_BUILD_CHANNEL=nightly `
+            -DTRR_BUILD_BRANCH=develop
+          cmake --build build-ci --config Release --parallel
+
+      - name: Package nightly application
+        id: package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $shortSha = "${env:GITHUB_SHA}".Substring(0, 8)
+          $stamp = Get-Date -Format "yyyy.MM.dd"
+          $packageBase = "trr-qt-trainer-nightly-$stamp-${{ github.run_number }}-$shortSha-win64"
+          $stagingDir = Join-Path $env:RUNNER_TEMP $packageBase
+          $binDir = Join-Path $stagingDir "bin"
+          New-Item -ItemType Directory -Force -Path $binDir | Out-Null
+
+          $exePath = Join-Path $env:GITHUB_WORKSPACE "build-ci\Release\trr_qt_trainer.exe"
+          Copy-Item $exePath $binDir
+          windeployqt --release --compiler-runtime --dir $binDir (Join-Path $binDir "trr_qt_trainer.exe")
+
+          Copy-Item assets, presets -Destination $stagingDir -Recurse -Force
+          Copy-Item README.md, README_AUTOMATION.md -Destination $stagingDir -Force
+
+          New-Item -ItemType Directory -Force -Path nightly | Out-Null
+          $zipPath = Join-Path nightly "$packageBase.zip"
+          Compress-Archive -Path (Join-Path $stagingDir "*") -DestinationPath $zipPath -CompressionLevel Optimal
+          $hashPath = "$zipPath.sha256"
+          (Get-FileHash $zipPath -Algorithm SHA256).Hash.ToLowerInvariant() | Set-Content $hashPath -NoNewline
+
+          "zip=$zipPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "sha256=$hashPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Upload nightly artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trr-qt-trainer-windows-nightly
+          path: |
+            ${{ steps.package.outputs.zip }}
+            ${{ steps.package.outputs.sha256 }}
+          if-no-files-found: error

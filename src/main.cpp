@@ -62,7 +62,11 @@
 #include <dwmapi.h>
 
 #include "app_logger.h"
+#include "build_info.h"
 #include "rpcs3_session_controller.h"
+#include "ui_main_window.h"
+#include "ui_runtime_dialog.h"
+#include "ui_value_writes_dialog.h"
 
 namespace
 {
@@ -160,40 +164,40 @@ const std::array<IdLabel, 36> kCharacters{{
 }};
 
 const std::array<IdLabel, 19> kStages{{
-    {"02 - Eternal Paradise", 0x02},
-    {"03 - Historic Town Square", 0x03},
-    {"04 - Condor Canyon", 0x04},
-    {"05 - Arctic Dream", 0x05},
-    {"08 - Moonlit Wilderness", 0x08},
-    {"0B - Sakura Schoolyard", 0x0B},
-    {"0C - Tempest", 0x0C},
-    {"0D - Winter Palace", 0x0D},
-    {"0E - Hall of Judgement", 0x0E},
-    {"0F - Naraku", 0x0F},
-    {"18 - [darkness]", 0x18},
-    {"22 - Practice (walls)", 0x22},
-    {"23 - Practice (no walls)", 0x23},
-    {"28 - Fireworks Over Barcelona", 0x28},
-    {"2A - Riverside Promenade", 0x2A},
-    {"2B - Tropical Rainforest", 0x2B},
-    {"2C - Moai Excavation", 0x2C},
-    {"2D - Extravagant Underground", 0x2D},
-    {"2E - Tulip Festival", 0x2E},
+    {"02 Eternal Paradise", 0x02},
+    {"03 Historic Town Square", 0x03},
+    {"04 Condor Canyon", 0x04},
+    {"05 Arctic Dream", 0x05},
+    {"08 Moonlit Wilderness", 0x08},
+    {"0B Sakura Schoolyard", 0x0B},
+    {"0C Tempest", 0x0C},
+    {"0D Winter Palace", 0x0D},
+    {"0E Hall of Judgement", 0x0E},
+    {"0F Naraku", 0x0F},
+    {"18 Darkness", 0x18},
+    {"22 Practice | Walls", 0x22},
+    {"23 Practice | No Walls", 0x23},
+    {"28 Fireworks Over Barcelona", 0x28},
+    {"2A Riverside Promenade", 0x2A},
+    {"2B Tropical Rainforest", 0x2B},
+    {"2C Moai Excavation", 0x2C},
+    {"2D Extravagant Underground", 0x2D},
+    {"2E Tulip Festival", 0x2E},
 }};
 
 const std::array<ModePreset, 5> kModePresets{{
-    {1, "1 - Versus/continuous fight"},
-    {2, "2 - Unknown (0x2)"},
-    {3, "3 - Unknown (0x3)"},
-    {4, "4 - Round reset/wake workaround"},
-    {5, "5 - Practice mode (stable)"},
+    {1, "1 Versus | Continuous Fight"},
+    {2, "2 Interactive Splash Demo (0x2)"},
+    {3, "3 Unknown (0x3)"},
+    {4, "4 Round Reset | Wake Workaround"},
+    {5, "5 Practice Mode | Stable"},
 }};
 
 const std::array<RoundTimePreset, 5> kRoundTimePresets{{
-    {"Infinite round time", 1U, std::nullopt},
-    {"30 seconds", 0U, 30U},
-    {"60 seconds", 0U, 60U},
-    {"90 seconds", 0U, 90U},
+    {"Infinite Round Time", 1U, std::nullopt},
+    {"30 Seconds", 0U, 30U},
+    {"60 Seconds", 0U, 60U},
+    {"90 Seconds", 0U, 90U},
     {"Custom", std::nullopt, std::nullopt},
 }};
 
@@ -390,48 +394,65 @@ public:
     MainWindow()
     {
         AppLogger::initialize();
-        setWindowTitle(QStringLiteral("TRR Qt Trainer"));
-        resize(1280, 760);
+        Ui::MainWindow mainUi;
+        mainUi.setupUi(this);
+        mainUi.statusPanelsLayout->setAlignment(Qt::AlignTop);
+        const QString buildNumber = QString::number(BuildInfo::number).rightJustified(5, QLatin1Char('0'));
+        setWindowTitle(QStringLiteral("TRR Qt Trainer %1-%2-%3 | %4 %5")
+                   .arg(QString::fromLatin1(BuildInfo::version),
+                    buildNumber,
+                    QString::fromLatin1(BuildInfo::commitSha),
+                    QString::fromLatin1(BuildInfo::channel),
+                    QString::fromLatin1(BuildInfo::branch)));
 
-        auto* root = new QWidget(this);
-        auto* layout = new QVBoxLayout(root);
+        attachButton_ = mainUi.attachButton;
+        applyButton_ = mainUi.applyButton;
+        startRpcs3Button_ = mainUi.startRpcs3Button;
+        startGameButton_ = mainUi.startGameButton;
+        restartGameButton_ = mainUi.restartGameButton;
+        resetEmulatorButton_ = mainUi.resetEmulatorButton;
+        terminateRpcs3Button_ = mainUi.terminateRpcs3Button;
+        rpcs3ConfigButton_ = mainUi.rpcs3ConfigButton;
+        snapshotButton_ = mainUi.snapshotButton;
+        trManualButton_ = mainUi.trManualButton;
+        e3Button_ = mainUi.e3Button;
+        showLogsButton_ = mainUi.showLogsButton;
+        tutorialButton_ = mainUi.tutorialButton;
+        refreshButton_ = mainUi.refreshButton;
+        readLiveButton_ = mainUi.readLiveButton;
+        stopLockButton_ = mainUi.stopLockButton;
+        savePresetButton_ = mainUi.savePresetButton;
+        loadPresetButton_ = mainUi.loadPresetButton;
+        profileConservativeButton_ = mainUi.profileConservativeButton;
+        profileBalancedButton_ = mainUi.profileBalancedButton;
+        profileAggressiveButton_ = mainUi.profileAggressiveButton;
+        runtimeButton_ = mainUi.runtimeButton;
+        valueWritesButton_ = mainUi.valueWritesButton;
+        advancedMemoryButton_ = mainUi.advancedMemoryButton;
 
-        auto* buttonRows = new QVBoxLayout();
-        buttonRows->setSpacing(3);
-        auto* buttonGrid = new QGridLayout();
-        buttonGrid->setHorizontalSpacing(6);
-        buttonGrid->setVerticalSpacing(6);
-        buttonGrid->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-        attachButton_ = new QPushButton(QStringLiteral("Attach RPCS3"), root);
-        attachButton_->setCheckable(true);
-        startRpcs3Button_ = new QPushButton(QStringLiteral("Start RPCS3"), root);
-        startGameButton_ = new QPushButton(QStringLiteral("Start Game"), root);
-        restartGameButton_ = new QPushButton(QStringLiteral("Restart Game"), root);
-        resetEmulatorButton_ = new QPushButton(QStringLiteral("Reset RPCS3"), root);
-        terminateRpcs3Button_ = new QPushButton(QStringLiteral("Terminate RPCS3"), root);
-        rpcs3ConfigButton_ = new QPushButton(QStringLiteral("RPCS3 Config"), root);
-        snapshotButton_ = new QPushButton(QStringLiteral("Snapshot"), root);
-        trManualButton_ = new QPushButton(QStringLiteral("TR Manual"), root);
-        e3Button_ = new QPushButton(QStringLiteral("E3 2013"), root);
-        tutorialButton_ = new QPushButton(QStringLiteral("Build/Tutorial"), root);
-        refreshButton_ = new QPushButton(QStringLiteral("Refresh Pointer"), root);
-        applyButton_ = new QPushButton(QStringLiteral("Apply Once"), root);
-        readLiveButton_ = new QPushButton(QStringLiteral("Read Live Values"), root);
-        stopLockButton_ = new QPushButton(QStringLiteral("Stop Lock"), root);
-        profileConservativeButton_ = new QPushButton(QStringLiteral("Preset Conservative"), root);
-        profileBalancedButton_ = new QPushButton(QStringLiteral("Preset Balanced"), root);
-        profileAggressiveButton_ = new QPushButton(QStringLiteral("Preset Aggressive"), root);
-        savePresetButton_ = new QPushButton(QStringLiteral("Save Preset"), root);
-        loadPresetButton_ = new QPushButton(QStringLiteral("Load Preset"), root);
-        showLogsButton_ = new QPushButton(QStringLiteral("Show Logs"), root);
-        advancedMemoryButton_ = new QPushButton(QStringLiteral("Advanced Memory"), root);
-        runtimeButton_ = new QPushButton(QStringLiteral("Runtime"), root);
-        valueWritesButton_ = new QPushButton(QStringLiteral("Value Writes"), root);
+        statusLabel_ = mainUi.statusLabel;
+        pointerLabel_ = mainUi.pointerLabel;
+        connectionStatusLabel_ = mainUi.connectionStatusLabel;
+        runningGameLabel_ = mainUi.runningGameLabel;
+        runningBuildLabel_ = mainUi.runningBuildLabel;
+        p1Combo_ = mainUi.p1Combo;
+        p2Combo_ = mainUi.p2Combo;
+        stageCombo_ = mainUi.stageCombo;
+        monitorP1Id_ = mainUi.monitorP1Id;
+        monitorP2Id_ = mainUi.monitorP2Id;
+        monitorStage_ = mainUi.monitorStage;
+        monitorState_ = mainUi.monitorState;
+        monitorTimer_ = mainUi.monitorTimer;
+        monitorCounters_ = mainUi.monitorCounters;
+        monitorUi_ = mainUi.monitorUi;
+        monitorInf_ = mainUi.monitorInf;
+        monitorGuard_ = mainUi.monitorGuard;
 
-        std::array<QPushButton*, 24> topButtons{{
+        std::array<QPushButton*, 25> topButtons{{
             attachButton_,
             applyButton_,
             startRpcs3Button_,
+            mainUi.startCeButton,
             startGameButton_,
             restartGameButton_,
             resetEmulatorButton_,
@@ -474,6 +495,8 @@ public:
         tutorialButton_->setIconSize(QSize(14, 14));
         startRpcs3Button_->setIcon(makeLeftAccentIcon(QColor(0, 255, 255)));
         startRpcs3Button_->setIconSize(QSize(14, 14));
+        mainUi.startCeButton->setIcon(makeLeftAccentIcon(QColor(13, 94, 165)));
+        mainUi.startCeButton->setIconSize(QSize(14, 14));
         startGameButton_->setIcon(makeLeftAccentIcon(QColor(0, 0, 128)));
         startGameButton_->setIconSize(QSize(14, 14));
         restartGameButton_->setIcon(makeLeftAccentIcon(QColor(255, 127, 80)));
@@ -494,9 +517,9 @@ public:
         profileBalancedButton_->setIconSize(QSize(14, 14));
         profileAggressiveButton_->setIcon(makeLeftAccentIcon(QColor(128, 0, 0)));
         profileAggressiveButton_->setIconSize(QSize(14, 14));
-        advancedMemoryButton_->setIcon(makeLeftAccentIcon(QColor(66, 133, 244)));
+        advancedMemoryButton_->setIcon(makeLeftAccentIcon(QColor(219, 200, 166)));
         advancedMemoryButton_->setIconSize(QSize(14, 14));
-        runtimeButton_->setIcon(makeLeftAccentIcon(QColor(66, 133, 244)));
+        runtimeButton_->setIcon(makeLeftAccentIcon(QColor(17, 63, 139)));
         runtimeButton_->setIconSize(QSize(14, 14));
         valueWritesButton_->setIcon(makeLeftAccentIcon(QColor(66, 133, 244)));
         valueWritesButton_->setIconSize(QSize(14, 14));
@@ -524,45 +547,8 @@ public:
             button->setFixedSize(maxButtonWidth, maxButtonHeight);
         }
 
-        constexpr int kTopButtonColumns = 6;
-        for (int i = 0; i < static_cast<int>(topButtons.size()); ++i)
-        {
-            const int row = i / kTopButtonColumns;
-            const int col = i % kTopButtonColumns;
-            buttonGrid->addWidget(topButtons[static_cast<std::size_t>(i)], row, col);
-        }
-
-        buttonRows->addLayout(buttonGrid);
-        layout->addLayout(buttonRows);
-
-        auto* topBoxes = new QHBoxLayout();
-        topBoxes->setAlignment(Qt::AlignTop);
-        auto* connectionBox = new QGroupBox(QStringLiteral("Connection"), root);
-
-        auto* connectionLayout = new QGridLayout(connectionBox);
-        connectionLayout->setContentsMargins(8, 10, 8, 8);
-        connectionLayout->setVerticalSpacing(2);
-        connectionLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-        statusLabel_ = new QLabel(QStringLiteral("Status: Not Attached"), connectionBox);
-        pointerLabel_ = new QLabel(QStringLiteral("Battle Pointer: Unresolved"), connectionBox);
-        connectionStatusLabel_ = new QLabel(QStringLiteral("Connection Status: Checking..."), connectionBox);
-        runningGameLabel_ = new QLabel(QStringLiteral("Game: Unknown"), connectionBox);
-        runningBuildLabel_ = new QLabel(QStringLiteral("Build: Unknown"), connectionBox);
-        connectionLayout->addWidget(statusLabel_, 0, 0);
-        connectionLayout->addWidget(pointerLabel_, 1, 0);
-        connectionLayout->addWidget(connectionStatusLabel_, 2, 0);
-        connectionLayout->addWidget(runningGameLabel_, 3, 0);
-        connectionLayout->addWidget(runningBuildLabel_, 4, 0);
-        connectionLayout->setRowStretch(5, 1);
-        const int twoButtonColumnsWidth = (maxButtonWidth * 2) + buttonGrid->horizontalSpacing();
-        connectionBox->setFixedWidth(twoButtonColumnsWidth);
-        topBoxes->addWidget(connectionBox);
-
-        auto* selectionBox = new QGroupBox(QStringLiteral("Selection"), root);
-        auto* selectionForm = new QFormLayout(selectionBox);
-        p1Combo_ = new QComboBox(selectionBox);
-        p2Combo_ = new QComboBox(selectionBox);
-        stageCombo_ = new QComboBox(selectionBox);
+        const int twoButtonColumnsWidth = (maxButtonWidth * 2) + mainUi.buttonGrid->horizontalSpacing();
+        mainUi.connectionBox->setFixedWidth(twoButtonColumnsWidth);
 
         for (const auto& c : kCharacters)
         {
@@ -581,92 +567,41 @@ public:
             const int defaultStageIdx = stageCombo_->findData(static_cast<quint32>(0x02));
             if (defaultStageIdx >= 0)
             {
-                stageCombo_->setCurrentIndex(defaultStageIdx); // 02 - Eternal Paradise
+                stageCombo_->setCurrentIndex(defaultStageIdx); // 02 Eternal Paradise
             }
         }
 
-        selectionForm->addRow(QStringLiteral("Player 1"), p1Combo_);
-        selectionForm->addRow(QStringLiteral("Player 2"), p2Combo_);
-        selectionForm->addRow(QStringLiteral("Stage"), stageCombo_);
-        selectionBox->setMaximumWidth(300);
-        topBoxes->addWidget(selectionBox, 4);
+        runtimeDialog_ = new QDialog(this);
+        Ui::RuntimeDialog runtimeUi;
+        runtimeUi.setupUi(runtimeDialog_);
+        lockCheckbox_ = runtimeUi.lockCheckbox;
+        lockSelectionCheckbox_ = runtimeUi.lockSelectionCheckbox;
+        autoDisableStageLockCheckbox_ = runtimeUi.autoDisableStageLockCheckbox;
+        guardPauseCheckbox_ = runtimeUi.guardPauseCheckbox;
+        guardPauseMsSpin_ = runtimeUi.guardPauseMsSpin;
+        stabilizeCheckbox_ = runtimeUi.stabilizeCheckbox;
+        modeResetPulseCheckbox_ = runtimeUi.modeResetPulseCheckbox;
+        p1ControllerCheckbox_ = runtimeUi.p1ControllerCheckbox;
+        p2CpuCheckbox_ = runtimeUi.p2CpuCheckbox;
+        countersCheckbox_ = runtimeUi.countersCheckbox;
+        p1CounterSpin_ = runtimeUi.p1CounterSpin;
+        p2CounterSpin_ = runtimeUi.p2CounterSpin;
 
-        auto* monitorBox = new QGroupBox(QStringLiteral("Live Monitor"), root);
-
-        auto* monitorGrid = new QGridLayout(monitorBox);
-        monitorP1Id_ = new QLabel(QStringLiteral("P1 ID: n/a"), monitorBox);
-        monitorP2Id_ = new QLabel(QStringLiteral("P2 ID: n/a"), monitorBox);
-        monitorStage_ = new QLabel(QStringLiteral("Stage ID: n/a"), monitorBox);
-        monitorState_ = new QLabel(QStringLiteral("Game state: n/a"), monitorBox);
-        monitorTimer_ = new QLabel(QStringLiteral("Round timer: n/a"), monitorBox);
-        monitorCounters_ = new QLabel(QStringLiteral("Counters P1/P2: n/a"), monitorBox);
-        monitorUi_ = new QLabel(QStringLiteral("UI flags: n/a"), monitorBox);
-        monitorInf_ = new QLabel(QStringLiteral("Infinite round: n/a"), monitorBox);
-        monitorGuard_ = new QLabel(QStringLiteral("Guard: lock disabled"), monitorBox);
-
-        monitorGrid->addWidget(monitorP1Id_, 0, 0);
-        monitorGrid->addWidget(monitorP2Id_, 0, 1);
-        monitorGrid->addWidget(monitorStage_, 1, 0);
-        monitorGrid->addWidget(monitorState_, 1, 1);
-        monitorGrid->addWidget(monitorTimer_, 2, 0);
-        monitorGrid->addWidget(monitorCounters_, 2, 1);
-        monitorGrid->addWidget(monitorUi_, 3, 0);
-        monitorGrid->addWidget(monitorInf_, 3, 1);
-        monitorGrid->addWidget(monitorGuard_, 4, 0, 1, 2);
-        monitorBox->setMinimumWidth(440);
-        monitorBox->setMaximumWidth(560);
-        topBoxes->addWidget(monitorBox, 5);
-
-        layout->addLayout(topBoxes);
-
-        auto* options = root;
-
-        lockCheckbox_ = new QCheckBox(QStringLiteral("Lock values continuously (fixes post-round black screen)"), options);
-        lockSelectionCheckbox_ = new QCheckBox(QStringLiteral("Also lock character/stage selection continuously"), options);
-        autoDisableStageLockCheckbox_ = new QCheckBox(QStringLiteral("Auto-disable stage lock once match starts"), options);
-        guardPauseCheckbox_ = new QCheckBox(QStringLiteral("Pause writes around round transitions"), options);
-        stabilizeCheckbox_ = new QCheckBox(QStringLiteral("Stabilize writes for ~10s after apply"), options);
-        modeResetPulseCheckbox_ = new QCheckBox(QStringLiteral("Apply mode using reset pulse (4 -> target)"), options);
-
-        writeModeCheckbox_ = new QCheckBox(QStringLiteral("Write game mode (offset 0x178)"), options);
-        modePresetCombo_ = new QComboBox(options);
-        modePresetCombo_->setFixedWidth(230);
-
-        writeHpCheckbox_ = new QCheckBox(QStringLiteral("Write HP/UI field (offset 0x2AC)"), options);
-        hpPresetCheckbox_ = new QCheckBox(QStringLiteral("Preset HP/UI field"), options);
-        hpPresetCombo_ = new QComboBox(options);
-        hpPresetCombo_->setFixedWidth(118);
-        hpRandomCheckbox_ = new QCheckBox(QStringLiteral("Random HP/UI field"), options);
-        hpEdit_ = new QLineEdit(QStringLiteral("0x4000000"), options);
-        hpEdit_->setFixedWidth(118);
-
-        writeInfiniteRoundCheckbox_ = new QCheckBox(QStringLiteral("Write infinite round (offset 0x2B4)"), options);
-        infiniteRoundSpin_ = new QSpinBox(options);
-        infiniteRoundSpin_->setRange(0, 0xFFFFFFFF);
-        infiniteRoundSpin_->setFixedWidth(88);
-
-        roundTimerCheckbox_ = new QCheckBox(QStringLiteral("Write round timer (offset 0x2A0, seconds)"), options);
-        roundTimerSecondsSpin_ = new QSpinBox(options);
-        roundTimerSecondsSpin_->setRange(0, 1000000);
-        roundTimerSecondsSpin_->setValue(30);
-        roundTimerSecondsSpin_->setFixedWidth(88);
-        roundTimePresetCombo_ = new QComboBox(options);
-        roundTimePresetCombo_->setFixedWidth(170);
-
-        p1ControllerCheckbox_ = new QCheckBox(QStringLiteral("Set P1 state = controller (base+0x12DA338 = 0)"), options);
-        p2CpuCheckbox_ = new QCheckBox(QStringLiteral("Set P2 state = CPU (base+0x12DC7D8 = 1)"), options);
-        countersCheckbox_ = new QCheckBox(QStringLiteral("Force round counters (offsets 0x290 and 0x29C)"), options);
-
-        p1CounterSpin_ = new QSpinBox(options);
-        p1CounterSpin_->setRange(0, 99);
-        p1CounterSpin_->setFixedWidth(72);
-        p2CounterSpin_ = new QSpinBox(options);
-        p2CounterSpin_->setRange(0, 99);
-        p2CounterSpin_->setFixedWidth(72);
-        guardPauseMsSpin_ = new QSpinBox(options);
-        guardPauseMsSpin_->setRange(200, 10000);
-        guardPauseMsSpin_->setSingleStep(200);
-        guardPauseMsSpin_->setValue(2800);
+        valueWritesDialog_ = new QDialog(this);
+        Ui::ValueWritesDialog valueWritesUi;
+        valueWritesUi.setupUi(valueWritesDialog_);
+        writeModeCheckbox_ = valueWritesUi.writeModeCheckbox;
+        modePresetCombo_ = valueWritesUi.modePresetCombo;
+        writeHpCheckbox_ = valueWritesUi.writeHpCheckbox;
+        hpPresetCheckbox_ = valueWritesUi.hpPresetCheckbox;
+        hpPresetCombo_ = valueWritesUi.hpPresetCombo;
+        hpRandomCheckbox_ = valueWritesUi.hpRandomCheckbox;
+        hpEdit_ = valueWritesUi.hpEdit;
+        writeInfiniteRoundCheckbox_ = valueWritesUi.writeInfiniteRoundCheckbox;
+        infiniteRoundSpin_ = valueWritesUi.infiniteRoundSpin;
+        roundTimerCheckbox_ = valueWritesUi.roundTimerCheckbox;
+        roundTimerSecondsSpin_ = valueWritesUi.roundTimerSecondsSpin;
+        roundTimePresetCombo_ = valueWritesUi.roundTimePresetCombo;
 
         for (const auto& mode : kModePresets)
         {
@@ -695,99 +630,6 @@ public:
         guardPauseCheckbox_->setChecked(true);
         stabilizeCheckbox_->setChecked(true);
         roundTimePresetCombo_->setCurrentIndex(0);
-
-        runtimeDialog_ = new QDialog(this);
-        runtimeDialog_->setWindowTitle(QStringLiteral("Runtime"));
-        auto* runtimeDialogLayout = new QVBoxLayout(runtimeDialog_);
-        auto* runtimeBox = new QGroupBox(QStringLiteral("Runtime"), runtimeDialog_);
-        auto* runtimeLayout = new QVBoxLayout(runtimeBox);
-        runtimeLayout->setContentsMargins(8, 8, 8, 8);
-        runtimeLayout->setSpacing(5);
-
-        runtimeLayout->addWidget(lockCheckbox_);
-        runtimeLayout->addWidget(lockSelectionCheckbox_);
-        runtimeLayout->addWidget(autoDisableStageLockCheckbox_);
-
-        auto* guardRowWidget = new QWidget(runtimeBox);
-        auto* guardRow = new QHBoxLayout(guardRowWidget);
-        guardRow->setContentsMargins(0, 0, 0, 0);
-        guardRow->addWidget(guardPauseCheckbox_);
-        guardRow->addWidget(new QLabel(QStringLiteral("ms:"), runtimeBox));
-        guardRow->addWidget(guardPauseMsSpin_);
-        guardRow->addStretch(1);
-        runtimeLayout->addWidget(guardRowWidget);
-
-        runtimeLayout->addWidget(stabilizeCheckbox_);
-        runtimeLayout->addWidget(modeResetPulseCheckbox_);
-        runtimeLayout->addWidget(p1ControllerCheckbox_);
-        runtimeLayout->addWidget(p2CpuCheckbox_);
-
-        runtimeLayout->addWidget(countersCheckbox_);
-
-        auto* countersValueRow = new QWidget(runtimeBox);
-        auto* countersValueLayout = new QHBoxLayout(countersValueRow);
-        countersValueLayout->setContentsMargins(20, 0, 0, 0);
-        countersValueLayout->setSpacing(6);
-        countersValueLayout->addWidget(new QLabel(QStringLiteral("P1:"), runtimeBox));
-        countersValueLayout->addWidget(p1CounterSpin_);
-        countersValueLayout->addWidget(new QLabel(QStringLiteral("P2:"), runtimeBox));
-        countersValueLayout->addWidget(p2CounterSpin_);
-        countersValueLayout->addStretch(1);
-        runtimeLayout->addWidget(countersValueRow);
-        runtimeLayout->addStretch(1);
-        runtimeBox->setMinimumWidth(380);
-        runtimeBox->setMaximumWidth(std::max(430, static_cast<int>(runtimeBox->sizeHint().width() * 1.00)));
-        runtimeDialogLayout->addWidget(runtimeBox);
-
-        auto* runtimeDialogButtons = new QDialogButtonBox(QDialogButtonBox::Close, runtimeDialog_);
-        runtimeDialogLayout->addWidget(runtimeDialogButtons);
-        connect(runtimeDialogButtons, &QDialogButtonBox::rejected, runtimeDialog_, &QDialog::reject);
-
-        valueWritesDialog_ = new QDialog(this);
-        valueWritesDialog_->setWindowTitle(QStringLiteral("Value Writes"));
-        auto* valueWritesDialogLayout = new QVBoxLayout(valueWritesDialog_);
-        auto* valuesBox = new QGroupBox(QStringLiteral("Value Writes"), valueWritesDialog_);
-        auto* valuesGrid = new QGridLayout(valuesBox);
-        valuesGrid->setContentsMargins(8, 8, 8, 8);
-        valuesGrid->setHorizontalSpacing(2);
-        valuesGrid->setVerticalSpacing(2);
-        valuesGrid->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-
-        const int labelColumnWidth = std::max({
-            writeModeCheckbox_->sizeHint().width(),
-            writeHpCheckbox_->sizeHint().width(),
-            hpPresetCheckbox_->sizeHint().width(),
-            hpRandomCheckbox_->sizeHint().width(),
-            writeInfiniteRoundCheckbox_->sizeHint().width(),
-            roundTimerCheckbox_->sizeHint().width()});
-        valuesGrid->setColumnMinimumWidth(0, labelColumnWidth -12);
-
-        valuesGrid->addWidget(writeModeCheckbox_, 0, 0);
-        valuesGrid->addWidget(modePresetCombo_, 0, 1);
-
-        valuesGrid->addWidget(writeHpCheckbox_, 1, 0);
-
-        valuesGrid->addWidget(hpPresetCheckbox_, 2, 0);
-        valuesGrid->addWidget(hpPresetCombo_, 2, 1);
-        valuesGrid->addWidget(hpRandomCheckbox_, 3, 0);
-        valuesGrid->addWidget(hpEdit_, 3, 1);
-
-        valuesGrid->addWidget(writeInfiniteRoundCheckbox_, 4, 0);
-        valuesGrid->addWidget(infiniteRoundSpin_, 4, 1);
-
-        valuesGrid->addWidget(roundTimerCheckbox_, 5, 0);
-        valuesGrid->addWidget(roundTimerSecondsSpin_, 5, 1);
-        valuesGrid->addWidget(roundTimePresetCombo_, 6, 1);
-        valuesGrid->setRowStretch(7, 1);
-        valuesBox->setMinimumWidth(520);
-        valuesBox->setMaximumWidth(std::max(640, static_cast<int>(valuesBox->sizeHint().width() * 1.00)));
-        valueWritesDialogLayout->addWidget(valuesBox);
-
-        auto* valueWritesDialogButtons = new QDialogButtonBox(QDialogButtonBox::Close, valueWritesDialog_);
-        valueWritesDialogLayout->addWidget(valueWritesDialogButtons);
-        connect(valueWritesDialogButtons, &QDialogButtonBox::rejected, valueWritesDialog_, &QDialog::reject);
-
-        setCentralWidget(root);
 
         const auto applyToggleStyle = [](QCheckBox* box) {
             if (box == nullptr)
@@ -837,10 +679,8 @@ public:
 
         // Keep Attach RPCS3 native so the platform theme controls its appearance.
 
-        // Keep the UI locked to the compact layout-derived size.
-        setFixedSize(minimumSizeHint().width(), minimumSizeHint().height());
-
         loadRpcs3PathSetting();
+        defaultPresetDirectory();
 
         timer_ = new QTimer(this);
         timer_->setInterval(kLockIntervalMs);
@@ -863,6 +703,7 @@ public:
             }
         });
         connect(startRpcs3Button_, &QPushButton::clicked, this, [this]() { showStartRpcs3Dialog(); });
+        connect(mainUi.startCeButton, &QPushButton::clicked, this, [this]() { startCheatEngine(); });
         connect(startGameButton_, &QPushButton::clicked, this, [this]() { showStartGameDialog(); });
         connect(restartGameButton_, &QPushButton::clicked, this, [this]() { restartConfiguredGame(); });
         connect(resetEmulatorButton_, &QPushButton::clicked, this, [this]() { resetEmulator(); });
@@ -1099,6 +940,7 @@ private:
                 loadEmulator(QStringLiteral("0.0.13"), QStringLiteral("0.0.13"), rpcs3ExePath_, rpcs3Build_);
                 loadEmulator(QStringLiteral("latest"), QStringLiteral("0.0.00"), rpcs3LatestExePath_, rpcs3LatestBuild_);
                 loadEmulator(QStringLiteral("custom"), QStringLiteral("0.0.00"), rpcs3CustomExePath_, rpcs3CustomBuild_);
+                cheatEnginePath_ = QDir::toNativeSeparators(root.value(QStringLiteral("cheatEnginePath")).toString().trimmed());
                 rpcs3ActiveExeChoice_ = std::clamp(root.value(QStringLiteral("defaultEmulator")).toInt(0), 0, 2);
 
                 const auto loadGame = [&games](const QString& titleId, QString& gamePath, int& emulatorChoice, int defaultChoice) {
@@ -1130,6 +972,7 @@ private:
         rpcs3ExePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("rpcs3ExePath")).toString().trimmed());
         rpcs3LatestExePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("rpcs3LatestExePath")).toString().trimmed());
         rpcs3CustomExePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("rpcs3CustomExePath")).toString().trimmed());
+        cheatEnginePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("cheatEnginePath")).toString().trimmed());
         if (settings.contains(QStringLiteral("rpcs3ActiveExeChoice")))
         {
             rpcs3ActiveExeChoice_ = settings.value(QStringLiteral("rpcs3ActiveExeChoice")).toInt();
@@ -1202,6 +1045,7 @@ private:
         QJsonObject root;
         root.insert(QStringLiteral("version"), 2);
         root.insert(QStringLiteral("defaultEmulator"), rpcs3ActiveExeChoice_);
+        root.insert(QStringLiteral("cheatEnginePath"), cheatEnginePath_.trimmed());
         root.insert(QStringLiteral("emulators"), emulators);
         root.insert(QStringLiteral("games"), games);
 
@@ -1320,6 +1164,16 @@ private:
         customRow->addWidget(customBrowse);
         v->addLayout(customRow);
 
+        auto* cheatEngineRow = new QHBoxLayout();
+        auto* cheatEngineLabel = new QLabel(QStringLiteral("Cheat Engine:"), &dlg);
+        auto* cheatEnginePathEdit = new QLineEdit(&dlg);
+        cheatEnginePathEdit->setText(cheatEnginePath_);
+        auto* cheatEngineBrowse = new QPushButton(QStringLiteral("Browse..."), &dlg);
+        cheatEngineRow->addWidget(cheatEngineLabel);
+        cheatEngineRow->addWidget(cheatEnginePathEdit, 1);
+        cheatEngineRow->addWidget(cheatEngineBrowse);
+        v->addLayout(cheatEngineRow);
+
         auto* activeRow = new QHBoxLayout();
         auto* activeLabel = new QLabel(QStringLiteral("Default RPCS3:"), &dlg);
         auto* activeCombo = new QComboBox(&dlg);
@@ -1427,6 +1281,19 @@ private:
             }
         });
 
+        connect(cheatEngineBrowse, &QPushButton::clicked, &dlg, [this, cheatEnginePathEdit]() {
+            QString dir = QFileInfo(cheatEnginePathEdit->text().trimmed()).absolutePath();
+            if (dir.isEmpty())
+            {
+                dir = QCoreApplication::applicationDirPath();
+            }
+            const QString selected = QFileDialog::getOpenFileName(this, QStringLiteral("Select Cheat Engine Executable"), dir, QStringLiteral("Executables (*.exe)"));
+            if (!selected.isEmpty())
+            {
+                cheatEnginePathEdit->setText(QDir::toNativeSeparators(selected));
+            }
+        });
+
         connect(download0013, &QPushButton::clicked, &dlg, []() {
             QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/RobertoTorino/rpcs3-trr")));
         });
@@ -1477,6 +1344,7 @@ private:
         const QString path = pathEdit->text().trimmed();
         const QString latestPath = latestPathEdit->text().trimmed();
         const QString customPath = customPathEdit->text().trimmed();
+        const QString cheatEnginePath = cheatEnginePathEdit->text().trimmed();
         const QString build = buildEdit->text().trimmed();
         const QString latestBuild = latestBuildEdit->text().trimmed();
         const QString customBuild = customBuildEdit->text().trimmed();
@@ -1507,6 +1375,12 @@ private:
         {
             AppLogger::error(QStringLiteral("RPCS3 configuration rejected: one or more executable paths do not exist."));
             QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("One or more RPCS3 executable paths do not exist."));
+            return;
+        }
+        if (!cheatEnginePath.isEmpty() && !QFileInfo(cheatEnginePath).isFile())
+        {
+            AppLogger::error(QStringLiteral("RPCS3 configuration rejected: Cheat Engine executable does not exist."));
+            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("The Cheat Engine executable path does not exist."));
             return;
         }
 
@@ -1556,6 +1430,7 @@ private:
         rpcs3ExePath_ = QDir::toNativeSeparators(path);
         rpcs3LatestExePath_ = QDir::toNativeSeparators(latestPath);
         rpcs3CustomExePath_ = QDir::toNativeSeparators(customPath);
+        cheatEnginePath_ = QDir::toNativeSeparators(cheatEnginePath);
         rpcs3Build_ = build;
         rpcs3LatestBuild_ = latestBuild;
         rpcs3CustomBuild_ = customBuild;
@@ -2289,6 +2164,28 @@ private:
         }
     }
 
+    void startCheatEngine()
+    {
+        const QString path = cheatEnginePath_.trimmed();
+        if (path.isEmpty() || !QFileInfo(path).isFile())
+        {
+            QMessageBox::warning(this,
+                                 QStringLiteral("TRR Qt Trainer"),
+                                 QStringLiteral("Configure a valid Cheat Engine executable in RPCS3 Config first."));
+            return;
+        }
+
+        AppLogger::info(QStringLiteral("Start Cheat Engine requested: %1").arg(QDir::toNativeSeparators(path)));
+        if (!QProcess::startDetached(path, {}))
+        {
+            AppLogger::error(QStringLiteral("Failed to start Cheat Engine: %1").arg(QDir::toNativeSeparators(path)));
+            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Failed to start Cheat Engine."));
+            return;
+        }
+
+        statusLabel_->setText(QStringLiteral("Status: Cheat Engine launch requested"));
+    }
+
     void openTrManual()
     {
         const QString manualPath = QDir::cleanPath(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("../assets/manual/TekkenRevolutionManual.pdf")));
@@ -2383,14 +2280,14 @@ private:
     {
         if (process_ == nullptr || battlePtr_ == 0)
         {
-            monitorP1Id_->setText(QStringLiteral("P1 ID: n/a"));
-            monitorP2Id_->setText(QStringLiteral("P2 ID: n/a"));
-            monitorStage_->setText(QStringLiteral("Stage ID: n/a"));
-            monitorState_->setText(QStringLiteral("Game state: n/a"));
-            monitorTimer_->setText(QStringLiteral("Round timer: n/a"));
+            monitorP1Id_->setText(QStringLiteral("P1 id: n/a"));
+            monitorP2Id_->setText(QStringLiteral("P2 id: n/a"));
+            monitorStage_->setText(QStringLiteral("Stage id: n/a"));
+            monitorState_->setText(QStringLiteral("Game State: n/a"));
+            monitorTimer_->setText(QStringLiteral("Round Timer: n/a"));
             monitorCounters_->setText(QStringLiteral("Counters P1/P2: n/a"));
-            monitorUi_->setText(QStringLiteral("UI flags: n/a"));
-            monitorInf_->setText(QStringLiteral("Infinite round: n/a"));
+            monitorUi_->setText(QStringLiteral("UI Flags: n/a"));
+            monitorInf_->setText(QStringLiteral("Infinite Round: n/a"));
             return;
         }
 
@@ -2404,14 +2301,14 @@ private:
         const auto ui = readBattleU32(kOffUiFlags);
         const auto inf = readBattleU32(kOffInfiniteRound);
 
-        monitorP1Id_->setText(p1.has_value() ? QStringLiteral("P1 ID: %1").arg(formatHex32(p1.value())) : QStringLiteral("P1 ID: n/a"));
-        monitorP2Id_->setText(p2.has_value() ? QStringLiteral("P2 ID: %1").arg(formatHex32(p2.value())) : QStringLiteral("P2 ID: n/a"));
-        monitorStage_->setText(stage.has_value() ? QStringLiteral("Stage ID: %1").arg(formatHex32(stage.value())) : QStringLiteral("Stage ID: n/a"));
-        monitorState_->setText(state.has_value() ? QStringLiteral("Game state: %1").arg(formatHex32(state.value())) : QStringLiteral("Game state: n/a"));
-        monitorTimer_->setText(timer.has_value() ? QStringLiteral("Round timer: %1").arg(timer.value()) : QStringLiteral("Round timer: n/a"));
+        monitorP1Id_->setText(p1.has_value() ? QStringLiteral("P1 id: %1").arg(formatHex32(p1.value())) : QStringLiteral("P1 ID: n/a"));
+        monitorP2Id_->setText(p2.has_value() ? QStringLiteral("P2 id: %1").arg(formatHex32(p2.value())) : QStringLiteral("P2 ID: n/a"));
+        monitorStage_->setText(stage.has_value() ? QStringLiteral("Stage id: %1").arg(formatHex32(stage.value())) : QStringLiteral("Stage ID: n/a"));
+        monitorState_->setText(state.has_value() ? QStringLiteral("Game State: %1").arg(formatHex32(state.value())) : QStringLiteral("Game state: n/a"));
+        monitorTimer_->setText(timer.has_value() ? QStringLiteral("Round Timer: %1").arg(timer.value()) : QStringLiteral("Round timer: n/a"));
         monitorCounters_->setText((c1.has_value() && c2.has_value()) ? QStringLiteral("Counters P1/P2: %1 / %2").arg(c1.value()).arg(c2.value()) : QStringLiteral("Counters P1/P2: n/a"));
-        monitorUi_->setText(ui.has_value() ? QStringLiteral("UI flags: %1").arg(formatHex32(ui.value())) : QStringLiteral("UI flags: n/a"));
-        monitorInf_->setText(inf.has_value() ? QStringLiteral("Infinite round: %1").arg(formatHex32(inf.value())) : QStringLiteral("Infinite round: n/a"));
+        monitorUi_->setText(ui.has_value() ? QStringLiteral("UI Flags: %1").arg(formatHex32(ui.value())) : QStringLiteral("UI flags: n/a"));
+        monitorInf_->setText(inf.has_value() ? QStringLiteral("Infinite Round: %1").arg(formatHex32(inf.value())) : QStringLiteral("Infinite round: n/a"));
     }
 
     QJsonObject buildPresetObject() const
@@ -2539,7 +2436,7 @@ private:
             p2CpuCheckbox_->setChecked(true);
             roundTimerCheckbox_->setChecked(false);
             countersCheckbox_->setChecked(false);
-            statusLabel_->setText(QStringLiteral("Status: applied Balanced profile"));
+            statusLabel_->setText(QStringLiteral("Status: Applied Balanced Profile"));
             break;
         case 2:
             lockCheckbox_->setChecked(true);
@@ -2562,7 +2459,7 @@ private:
             roundTimerCheckbox_->setChecked(true);
             roundTimerSecondsSpin_->setValue(90);
             countersCheckbox_->setChecked(true);
-            statusLabel_->setText(QStringLiteral("Status: applied Aggressive profile"));
+            statusLabel_->setText(QStringLiteral("Status: Applied Aggressive Profile"));
             break;
         default:
             return;
@@ -2635,16 +2532,9 @@ private:
     QString defaultPresetDirectory() const
     {
         const QDir appDir(QCoreApplication::applicationDirPath());
-        const QString preferred = QDir::cleanPath(appDir.filePath(QStringLiteral("../presets")));
-        QDir().mkpath(preferred);
-        if (QDir(preferred).exists())
-        {
-            return preferred;
-        }
-
-        const QString fallback = QDir::cleanPath(appDir.filePath(QStringLiteral("presets")));
-        QDir().mkpath(fallback);
-        return fallback;
+        const QString presetDirectory = QDir::cleanPath(appDir.filePath(QStringLiteral("presets")));
+        QDir().mkpath(presetDirectory);
+        return presetDirectory;
     }
 
     void savePreset()
@@ -2658,13 +2548,13 @@ private:
         QFile file(filePath);
         if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
         {
-            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Could not write preset file."));
+            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Could Not Write Preset File."));
             return;
         }
 
         file.write(QJsonDocument(buildPresetObject()).toJson(QJsonDocument::Indented));
         file.close();
-        statusLabel_->setText(QStringLiteral("Status: preset saved"));
+        statusLabel_->setText(QStringLiteral("Status: Preset Saved"));
     }
 
     void loadPreset()
@@ -2678,7 +2568,7 @@ private:
         QFile file(filePath);
         if (!file.open(QIODevice::ReadOnly))
         {
-            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Could not read preset file."));
+            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Could Not Read Preset File."));
             return;
         }
 
@@ -2687,12 +2577,12 @@ private:
         file.close();
         if (err.error != QJsonParseError::NoError || !doc.isObject())
         {
-            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Invalid preset JSON."));
+            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Invalid Preset JSON."));
             return;
         }
 
         applyPresetObject(doc.object());
-        statusLabel_->setText(QStringLiteral("Status: preset loaded"));
+        statusLabel_->setText(QStringLiteral("Status: Preset Loaded"));
     }
 
     bool writeAndVerifyU32(std::uint64_t addr, std::uint32_t expected)
@@ -3218,7 +3108,7 @@ private:
         }
 
         connectionCheckInProgress_ = true;
-        connectionStatusLabel_->setText(QStringLiteral("Connection Status: Checking..."));
+        connectionStatusLabel_->setText(QStringLiteral("Connection: Checking..."));
 
         QNetworkRequest request(QUrl(QStringLiteral("http://www.msftconnecttest.com/connecttest.txt")));
         request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
@@ -3248,6 +3138,7 @@ private:
     QString rpcs3ExePath_;
     QString rpcs3LatestExePath_;
     QString rpcs3CustomExePath_;
+    QString cheatEnginePath_;
     QString rpcs3Build_ = QStringLiteral("0.0.13");
     QString rpcs3LatestBuild_ = QStringLiteral("0.0.00");
     QString rpcs3CustomBuild_ = QStringLiteral("0.0.00");
@@ -3379,6 +3270,7 @@ private:
 int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
+    app.setWindowIcon(QIcon(QStringLiteral(":/icons/trr-qt-trainer.png")));
     MainWindow w;
     w.show();
     return app.exec();

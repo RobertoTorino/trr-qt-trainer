@@ -1,0 +1,10 @@
+#pragma once
+
+namespace BuildInfo
+{
+inline constexpr char version[] = "@TRR_VERSION@";
+inline constexpr int number = @TRR_BUILD_NUMBER@;
+inline constexpr char commitSha[] = "@TRR_COMMIT_SHA@";
+inline constexpr char channel[] = "@TRR_BUILD_CHANNEL@";
+inline constexpr char branch[] = "@TRR_BUILD_BRANCH@";
+}
