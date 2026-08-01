@@ -164,40 +164,40 @@ const std::array<IdLabel, 36> kCharacters{{
 }};
 
 const std::array<IdLabel, 19> kStages{{
-    {"02 - Eternal Paradise", 0x02},
-    {"03 - Historic Town Square", 0x03},
-    {"04 - Condor Canyon", 0x04},
-    {"05 - Arctic Dream", 0x05},
-    {"08 - Moonlit Wilderness", 0x08},
-    {"0B - Sakura Schoolyard", 0x0B},
-    {"0C - Tempest", 0x0C},
-    {"0D - Winter Palace", 0x0D},
-    {"0E - Hall of Judgement", 0x0E},
-    {"0F - Naraku", 0x0F},
-    {"18 - [darkness]", 0x18},
-    {"22 - Practice (walls)", 0x22},
-    {"23 - Practice (no walls)", 0x23},
-    {"28 - Fireworks Over Barcelona", 0x28},
-    {"2A - Riverside Promenade", 0x2A},
-    {"2B - Tropical Rainforest", 0x2B},
-    {"2C - Moai Excavation", 0x2C},
-    {"2D - Extravagant Underground", 0x2D},
-    {"2E - Tulip Festival", 0x2E},
+    {"02 Eternal Paradise", 0x02},
+    {"03 Historic Town Square", 0x03},
+    {"04 Condor Canyon", 0x04},
+    {"05 Arctic Dream", 0x05},
+    {"08 Moonlit Wilderness", 0x08},
+    {"0B Sakura Schoolyard", 0x0B},
+    {"0C Tempest", 0x0C},
+    {"0D Winter Palace", 0x0D},
+    {"0E Hall of Judgement", 0x0E},
+    {"0F Naraku", 0x0F},
+    {"18 Darkness", 0x18},
+    {"22 Practice | Walls", 0x22},
+    {"23 Practice | No Walls", 0x23},
+    {"28 Fireworks Over Barcelona", 0x28},
+    {"2A Riverside Promenade", 0x2A},
+    {"2B Tropical Rainforest", 0x2B},
+    {"2C Moai Excavation", 0x2C},
+    {"2D Extravagant Underground", 0x2D},
+    {"2E Tulip Festival", 0x2E},
 }};
 
 const std::array<ModePreset, 5> kModePresets{{
-    {1, "1 - Versus/continuous fight"},
-    {2, "2 - Unknown (0x2)"},
-    {3, "3 - Unknown (0x3)"},
-    {4, "4 - Round reset/wake workaround"},
-    {5, "5 - Practice mode (stable)"},
+    {1, "1 Versus | Continuous Fight"},
+    {2, "2 Interactive Splash Demo (0x2)"},
+    {3, "3 Unknown (0x3)"},
+    {4, "4 Round Reset | Wake Workaround"},
+    {5, "5 Practice Mode | Stable"},
 }};
 
 const std::array<RoundTimePreset, 5> kRoundTimePresets{{
-    {"Infinite round time", 1U, std::nullopt},
-    {"30 seconds", 0U, 30U},
-    {"60 seconds", 0U, 60U},
-    {"90 seconds", 0U, 90U},
+    {"Infinite Round Time", 1U, std::nullopt},
+    {"30 Seconds", 0U, 30U},
+    {"60 Seconds", 0U, 60U},
+    {"90 Seconds", 0U, 90U},
     {"Custom", std::nullopt, std::nullopt},
 }};
 
@@ -448,10 +448,11 @@ public:
         monitorInf_ = mainUi.monitorInf;
         monitorGuard_ = mainUi.monitorGuard;
 
-        std::array<QPushButton*, 24> topButtons{{
+        std::array<QPushButton*, 25> topButtons{{
             attachButton_,
             applyButton_,
             startRpcs3Button_,
+            mainUi.startCeButton,
             startGameButton_,
             restartGameButton_,
             resetEmulatorButton_,
@@ -494,6 +495,8 @@ public:
         tutorialButton_->setIconSize(QSize(14, 14));
         startRpcs3Button_->setIcon(makeLeftAccentIcon(QColor(0, 255, 255)));
         startRpcs3Button_->setIconSize(QSize(14, 14));
+        mainUi.startCeButton->setIcon(makeLeftAccentIcon(QColor(13, 94, 165)));
+        mainUi.startCeButton->setIconSize(QSize(14, 14));
         startGameButton_->setIcon(makeLeftAccentIcon(QColor(0, 0, 128)));
         startGameButton_->setIconSize(QSize(14, 14));
         restartGameButton_->setIcon(makeLeftAccentIcon(QColor(255, 127, 80)));
@@ -514,9 +517,9 @@ public:
         profileBalancedButton_->setIconSize(QSize(14, 14));
         profileAggressiveButton_->setIcon(makeLeftAccentIcon(QColor(128, 0, 0)));
         profileAggressiveButton_->setIconSize(QSize(14, 14));
-        advancedMemoryButton_->setIcon(makeLeftAccentIcon(QColor(66, 133, 244)));
+        advancedMemoryButton_->setIcon(makeLeftAccentIcon(QColor(219, 200, 166)));
         advancedMemoryButton_->setIconSize(QSize(14, 14));
-        runtimeButton_->setIcon(makeLeftAccentIcon(QColor(66, 133, 244)));
+        runtimeButton_->setIcon(makeLeftAccentIcon(QColor(17, 63, 139)));
         runtimeButton_->setIconSize(QSize(14, 14));
         valueWritesButton_->setIcon(makeLeftAccentIcon(QColor(66, 133, 244)));
         valueWritesButton_->setIconSize(QSize(14, 14));
@@ -564,7 +567,7 @@ public:
             const int defaultStageIdx = stageCombo_->findData(static_cast<quint32>(0x02));
             if (defaultStageIdx >= 0)
             {
-                stageCombo_->setCurrentIndex(defaultStageIdx); // 02 - Eternal Paradise
+                stageCombo_->setCurrentIndex(defaultStageIdx); // 02 Eternal Paradise
             }
         }
 
@@ -676,10 +679,8 @@ public:
 
         // Keep Attach RPCS3 native so the platform theme controls its appearance.
 
-        // Keep the UI locked to the compact layout-derived size.
-        setFixedSize(minimumSizeHint().width(), minimumSizeHint().height());
-
         loadRpcs3PathSetting();
+        defaultPresetDirectory();
 
         timer_ = new QTimer(this);
         timer_->setInterval(kLockIntervalMs);
@@ -702,6 +703,7 @@ public:
             }
         });
         connect(startRpcs3Button_, &QPushButton::clicked, this, [this]() { showStartRpcs3Dialog(); });
+        connect(mainUi.startCeButton, &QPushButton::clicked, this, [this]() { startCheatEngine(); });
         connect(startGameButton_, &QPushButton::clicked, this, [this]() { showStartGameDialog(); });
         connect(restartGameButton_, &QPushButton::clicked, this, [this]() { restartConfiguredGame(); });
         connect(resetEmulatorButton_, &QPushButton::clicked, this, [this]() { resetEmulator(); });
@@ -938,6 +940,7 @@ private:
                 loadEmulator(QStringLiteral("0.0.13"), QStringLiteral("0.0.13"), rpcs3ExePath_, rpcs3Build_);
                 loadEmulator(QStringLiteral("latest"), QStringLiteral("0.0.00"), rpcs3LatestExePath_, rpcs3LatestBuild_);
                 loadEmulator(QStringLiteral("custom"), QStringLiteral("0.0.00"), rpcs3CustomExePath_, rpcs3CustomBuild_);
+                cheatEnginePath_ = QDir::toNativeSeparators(root.value(QStringLiteral("cheatEnginePath")).toString().trimmed());
                 rpcs3ActiveExeChoice_ = std::clamp(root.value(QStringLiteral("defaultEmulator")).toInt(0), 0, 2);
 
                 const auto loadGame = [&games](const QString& titleId, QString& gamePath, int& emulatorChoice, int defaultChoice) {
@@ -969,6 +972,7 @@ private:
         rpcs3ExePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("rpcs3ExePath")).toString().trimmed());
         rpcs3LatestExePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("rpcs3LatestExePath")).toString().trimmed());
         rpcs3CustomExePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("rpcs3CustomExePath")).toString().trimmed());
+        cheatEnginePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("cheatEnginePath")).toString().trimmed());
         if (settings.contains(QStringLiteral("rpcs3ActiveExeChoice")))
         {
             rpcs3ActiveExeChoice_ = settings.value(QStringLiteral("rpcs3ActiveExeChoice")).toInt();
@@ -1041,6 +1045,7 @@ private:
         QJsonObject root;
         root.insert(QStringLiteral("version"), 2);
         root.insert(QStringLiteral("defaultEmulator"), rpcs3ActiveExeChoice_);
+        root.insert(QStringLiteral("cheatEnginePath"), cheatEnginePath_.trimmed());
         root.insert(QStringLiteral("emulators"), emulators);
         root.insert(QStringLiteral("games"), games);
 
@@ -1159,6 +1164,16 @@ private:
         customRow->addWidget(customBrowse);
         v->addLayout(customRow);
 
+        auto* cheatEngineRow = new QHBoxLayout();
+        auto* cheatEngineLabel = new QLabel(QStringLiteral("Cheat Engine:"), &dlg);
+        auto* cheatEnginePathEdit = new QLineEdit(&dlg);
+        cheatEnginePathEdit->setText(cheatEnginePath_);
+        auto* cheatEngineBrowse = new QPushButton(QStringLiteral("Browse..."), &dlg);
+        cheatEngineRow->addWidget(cheatEngineLabel);
+        cheatEngineRow->addWidget(cheatEnginePathEdit, 1);
+        cheatEngineRow->addWidget(cheatEngineBrowse);
+        v->addLayout(cheatEngineRow);
+
         auto* activeRow = new QHBoxLayout();
         auto* activeLabel = new QLabel(QStringLiteral("Default RPCS3:"), &dlg);
         auto* activeCombo = new QComboBox(&dlg);
@@ -1266,6 +1281,19 @@ private:
             }
         });
 
+        connect(cheatEngineBrowse, &QPushButton::clicked, &dlg, [this, cheatEnginePathEdit]() {
+            QString dir = QFileInfo(cheatEnginePathEdit->text().trimmed()).absolutePath();
+            if (dir.isEmpty())
+            {
+                dir = QCoreApplication::applicationDirPath();
+            }
+            const QString selected = QFileDialog::getOpenFileName(this, QStringLiteral("Select Cheat Engine Executable"), dir, QStringLiteral("Executables (*.exe)"));
+            if (!selected.isEmpty())
+            {
+                cheatEnginePathEdit->setText(QDir::toNativeSeparators(selected));
+            }
+        });
+
         connect(download0013, &QPushButton::clicked, &dlg, []() {
             QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/RobertoTorino/rpcs3-trr")));
         });
@@ -1316,6 +1344,7 @@ private:
         const QString path = pathEdit->text().trimmed();
         const QString latestPath = latestPathEdit->text().trimmed();
         const QString customPath = customPathEdit->text().trimmed();
+        const QString cheatEnginePath = cheatEnginePathEdit->text().trimmed();
         const QString build = buildEdit->text().trimmed();
         const QString latestBuild = latestBuildEdit->text().trimmed();
         const QString customBuild = customBuildEdit->text().trimmed();
@@ -1346,6 +1375,12 @@ private:
         {
             AppLogger::error(QStringLiteral("RPCS3 configuration rejected: one or more executable paths do not exist."));
             QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("One or more RPCS3 executable paths do not exist."));
+            return;
+        }
+        if (!cheatEnginePath.isEmpty() && !QFileInfo(cheatEnginePath).isFile())
+        {
+            AppLogger::error(QStringLiteral("RPCS3 configuration rejected: Cheat Engine executable does not exist."));
+            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("The Cheat Engine executable path does not exist."));
             return;
         }
 
@@ -1395,6 +1430,7 @@ private:
         rpcs3ExePath_ = QDir::toNativeSeparators(path);
         rpcs3LatestExePath_ = QDir::toNativeSeparators(latestPath);
         rpcs3CustomExePath_ = QDir::toNativeSeparators(customPath);
+        cheatEnginePath_ = QDir::toNativeSeparators(cheatEnginePath);
         rpcs3Build_ = build;
         rpcs3LatestBuild_ = latestBuild;
         rpcs3CustomBuild_ = customBuild;
@@ -2128,6 +2164,28 @@ private:
         }
     }
 
+    void startCheatEngine()
+    {
+        const QString path = cheatEnginePath_.trimmed();
+        if (path.isEmpty() || !QFileInfo(path).isFile())
+        {
+            QMessageBox::warning(this,
+                                 QStringLiteral("TRR Qt Trainer"),
+                                 QStringLiteral("Configure a valid Cheat Engine executable in RPCS3 Config first."));
+            return;
+        }
+
+        AppLogger::info(QStringLiteral("Start Cheat Engine requested: %1").arg(QDir::toNativeSeparators(path)));
+        if (!QProcess::startDetached(path, {}))
+        {
+            AppLogger::error(QStringLiteral("Failed to start Cheat Engine: %1").arg(QDir::toNativeSeparators(path)));
+            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Failed to start Cheat Engine."));
+            return;
+        }
+
+        statusLabel_->setText(QStringLiteral("Status: Cheat Engine launch requested"));
+    }
+
     void openTrManual()
     {
         const QString manualPath = QDir::cleanPath(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("../assets/manual/TekkenRevolutionManual.pdf")));
@@ -2222,14 +2280,14 @@ private:
     {
         if (process_ == nullptr || battlePtr_ == 0)
         {
-            monitorP1Id_->setText(QStringLiteral("P1 ID: n/a"));
-            monitorP2Id_->setText(QStringLiteral("P2 ID: n/a"));
-            monitorStage_->setText(QStringLiteral("Stage ID: n/a"));
-            monitorState_->setText(QStringLiteral("Game state: n/a"));
-            monitorTimer_->setText(QStringLiteral("Round timer: n/a"));
+            monitorP1Id_->setText(QStringLiteral("P1 id: n/a"));
+            monitorP2Id_->setText(QStringLiteral("P2 id: n/a"));
+            monitorStage_->setText(QStringLiteral("Stage id: n/a"));
+            monitorState_->setText(QStringLiteral("Game State: n/a"));
+            monitorTimer_->setText(QStringLiteral("Round Timer: n/a"));
             monitorCounters_->setText(QStringLiteral("Counters P1/P2: n/a"));
-            monitorUi_->setText(QStringLiteral("UI flags: n/a"));
-            monitorInf_->setText(QStringLiteral("Infinite round: n/a"));
+            monitorUi_->setText(QStringLiteral("UI Flags: n/a"));
+            monitorInf_->setText(QStringLiteral("Infinite Round: n/a"));
             return;
         }
 
@@ -2243,14 +2301,14 @@ private:
         const auto ui = readBattleU32(kOffUiFlags);
         const auto inf = readBattleU32(kOffInfiniteRound);
 
-        monitorP1Id_->setText(p1.has_value() ? QStringLiteral("P1 ID: %1").arg(formatHex32(p1.value())) : QStringLiteral("P1 ID: n/a"));
-        monitorP2Id_->setText(p2.has_value() ? QStringLiteral("P2 ID: %1").arg(formatHex32(p2.value())) : QStringLiteral("P2 ID: n/a"));
-        monitorStage_->setText(stage.has_value() ? QStringLiteral("Stage ID: %1").arg(formatHex32(stage.value())) : QStringLiteral("Stage ID: n/a"));
-        monitorState_->setText(state.has_value() ? QStringLiteral("Game state: %1").arg(formatHex32(state.value())) : QStringLiteral("Game state: n/a"));
-        monitorTimer_->setText(timer.has_value() ? QStringLiteral("Round timer: %1").arg(timer.value()) : QStringLiteral("Round timer: n/a"));
+        monitorP1Id_->setText(p1.has_value() ? QStringLiteral("P1 id: %1").arg(formatHex32(p1.value())) : QStringLiteral("P1 ID: n/a"));
+        monitorP2Id_->setText(p2.has_value() ? QStringLiteral("P2 id: %1").arg(formatHex32(p2.value())) : QStringLiteral("P2 ID: n/a"));
+        monitorStage_->setText(stage.has_value() ? QStringLiteral("Stage id: %1").arg(formatHex32(stage.value())) : QStringLiteral("Stage ID: n/a"));
+        monitorState_->setText(state.has_value() ? QStringLiteral("Game State: %1").arg(formatHex32(state.value())) : QStringLiteral("Game state: n/a"));
+        monitorTimer_->setText(timer.has_value() ? QStringLiteral("Round Timer: %1").arg(timer.value()) : QStringLiteral("Round timer: n/a"));
         monitorCounters_->setText((c1.has_value() && c2.has_value()) ? QStringLiteral("Counters P1/P2: %1 / %2").arg(c1.value()).arg(c2.value()) : QStringLiteral("Counters P1/P2: n/a"));
-        monitorUi_->setText(ui.has_value() ? QStringLiteral("UI flags: %1").arg(formatHex32(ui.value())) : QStringLiteral("UI flags: n/a"));
-        monitorInf_->setText(inf.has_value() ? QStringLiteral("Infinite round: %1").arg(formatHex32(inf.value())) : QStringLiteral("Infinite round: n/a"));
+        monitorUi_->setText(ui.has_value() ? QStringLiteral("UI Flags: %1").arg(formatHex32(ui.value())) : QStringLiteral("UI flags: n/a"));
+        monitorInf_->setText(inf.has_value() ? QStringLiteral("Infinite Round: %1").arg(formatHex32(inf.value())) : QStringLiteral("Infinite round: n/a"));
     }
 
     QJsonObject buildPresetObject() const
@@ -2378,7 +2436,7 @@ private:
             p2CpuCheckbox_->setChecked(true);
             roundTimerCheckbox_->setChecked(false);
             countersCheckbox_->setChecked(false);
-            statusLabel_->setText(QStringLiteral("Status: applied Balanced profile"));
+            statusLabel_->setText(QStringLiteral("Status: Applied Balanced Profile"));
             break;
         case 2:
             lockCheckbox_->setChecked(true);
@@ -2401,7 +2459,7 @@ private:
             roundTimerCheckbox_->setChecked(true);
             roundTimerSecondsSpin_->setValue(90);
             countersCheckbox_->setChecked(true);
-            statusLabel_->setText(QStringLiteral("Status: applied Aggressive profile"));
+            statusLabel_->setText(QStringLiteral("Status: Applied Aggressive Profile"));
             break;
         default:
             return;
@@ -2474,16 +2532,9 @@ private:
     QString defaultPresetDirectory() const
     {
         const QDir appDir(QCoreApplication::applicationDirPath());
-        const QString preferred = QDir::cleanPath(appDir.filePath(QStringLiteral("../presets")));
-        QDir().mkpath(preferred);
-        if (QDir(preferred).exists())
-        {
-            return preferred;
-        }
-
-        const QString fallback = QDir::cleanPath(appDir.filePath(QStringLiteral("presets")));
-        QDir().mkpath(fallback);
-        return fallback;
+        const QString presetDirectory = QDir::cleanPath(appDir.filePath(QStringLiteral("presets")));
+        QDir().mkpath(presetDirectory);
+        return presetDirectory;
     }
 
     void savePreset()
@@ -2497,13 +2548,13 @@ private:
         QFile file(filePath);
         if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
         {
-            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Could not write preset file."));
+            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Could Not Write Preset File."));
             return;
         }
 
         file.write(QJsonDocument(buildPresetObject()).toJson(QJsonDocument::Indented));
         file.close();
-        statusLabel_->setText(QStringLiteral("Status: preset saved"));
+        statusLabel_->setText(QStringLiteral("Status: Preset Saved"));
     }
 
     void loadPreset()
@@ -2517,7 +2568,7 @@ private:
         QFile file(filePath);
         if (!file.open(QIODevice::ReadOnly))
         {
-            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Could not read preset file."));
+            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Could Not Read Preset File."));
             return;
         }
 
@@ -2526,12 +2577,12 @@ private:
         file.close();
         if (err.error != QJsonParseError::NoError || !doc.isObject())
         {
-            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Invalid preset JSON."));
+            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Invalid Preset JSON."));
             return;
         }
 
         applyPresetObject(doc.object());
-        statusLabel_->setText(QStringLiteral("Status: preset loaded"));
+        statusLabel_->setText(QStringLiteral("Status: Preset Loaded"));
     }
 
     bool writeAndVerifyU32(std::uint64_t addr, std::uint32_t expected)
@@ -3057,7 +3108,7 @@ private:
         }
 
         connectionCheckInProgress_ = true;
-        connectionStatusLabel_->setText(QStringLiteral("Connection Status: Checking..."));
+        connectionStatusLabel_->setText(QStringLiteral("Connection: Checking..."));
 
         QNetworkRequest request(QUrl(QStringLiteral("http://www.msftconnecttest.com/connecttest.txt")));
         request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
@@ -3087,6 +3138,7 @@ private:
     QString rpcs3ExePath_;
     QString rpcs3LatestExePath_;
     QString rpcs3CustomExePath_;
+    QString cheatEnginePath_;
     QString rpcs3Build_ = QStringLiteral("0.0.13");
     QString rpcs3LatestBuild_ = QStringLiteral("0.0.00");
     QString rpcs3CustomBuild_ = QStringLiteral("0.0.00");

@@ -6,188 +6,195 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1280</width>
-    <height>420</height>
+    <width>1023</width>
+    <height>292</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>TRR Qt Trainer</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QVBoxLayout" name="mainLayout">
+   <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <layout class="QGridLayout" name="buttonGrid">
       <property name="spacing">
        <number>6</number>
       </property>
-      <item row="0" column="0">
-       <widget class="QPushButton" name="attachButton">
+            <item row="0" column="0">
+             <widget class="QPushButton" name="attachButton">
         <property name="text">
-         <string>Attach RPCS3</string>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
+                 <string>Attach RPCS3</string>
+                </property>
+                <property name="checkable">
+                 <bool>true</bool>
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QPushButton" name="applyButton">
+            <item row="0" column="1">
+             <widget class="QPushButton" name="applyButton">
         <property name="text">
-         <string>Apply Once</string>
+                 <string>Apply Once</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
-       <widget class="QPushButton" name="startRpcs3Button">
+            <item row="0" column="2">
+             <widget class="QPushButton" name="startRpcs3Button">
         <property name="text">
-         <string>Start RPCS3</string>
+                 <string>Start RPCS3</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="3">
-       <widget class="QPushButton" name="startGameButton">
+            <item row="0" column="3">
+             <widget class="QPushButton" name="startCeButton">
         <property name="text">
-         <string>Start Game</string>
+                 <string>Start CE</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="4">
-       <widget class="QPushButton" name="restartGameButton">
+            <item row="0" column="4">
+             <widget class="QPushButton" name="startGameButton">
         <property name="text">
-         <string>Restart Game</string>
+                 <string>Start Game</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="5">
-       <widget class="QPushButton" name="resetEmulatorButton">
+            <item row="0" column="5">
+             <widget class="QPushButton" name="restartGameButton">
         <property name="text">
-         <string>Reset RPCS3</string>
+                 <string>Restart Game</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QPushButton" name="terminateRpcs3Button">
+            <item row="0" column="6">
+             <widget class="QPushButton" name="resetEmulatorButton">
         <property name="text">
-         <string>Terminate RPCS3</string>
+                 <string>Reset RPCS3</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QPushButton" name="rpcs3ConfigButton">
+            <item row="1" column="0">
+             <widget class="QPushButton" name="terminateRpcs3Button">
         <property name="text">
-         <string>RPCS3 Config</string>
+                 <string>Terminate RPCS3</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
-       <widget class="QPushButton" name="snapshotButton">
+            <item row="1" column="1">
+             <widget class="QPushButton" name="rpcs3ConfigButton">
         <property name="text">
-         <string>Screenshot</string>
+                 <string>RPCS3 Config</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="3">
-       <widget class="QPushButton" name="trManualButton">
+            <item row="1" column="2">
+             <widget class="QPushButton" name="snapshotButton">
         <property name="text">
-         <string>TR Manual</string>
+                 <string>Screenshot</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="4">
-       <widget class="QPushButton" name="e3Button">
+            <item row="1" column="3">
+             <widget class="QPushButton" name="trManualButton">
         <property name="text">
-         <string>E3 2013 Demo</string>
+                 <string>TR Manual</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="5">
-       <widget class="QPushButton" name="showLogsButton">
+            <item row="1" column="4">
+             <widget class="QPushButton" name="e3Button">
         <property name="text">
-         <string>Show Logs</string>
+                 <string>E3 2013 Demo</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QPushButton" name="tutorialButton">
+            <item row="1" column="5">
+             <widget class="QPushButton" name="showLogsButton">
         <property name="text">
-         <string>Build | Tutorial</string>
+                 <string>Show Logs</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
-       <widget class="QPushButton" name="refreshButton">
+            <item row="1" column="6">
+             <widget class="QPushButton" name="tutorialButton">
         <property name="text">
-         <string>Refresh Pointer</string>
+                 <string>Build | Tutorial</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="2">
-       <widget class="QPushButton" name="readLiveButton">
+            <item row="2" column="0">
+             <widget class="QPushButton" name="refreshButton">
         <property name="text">
-         <string>Read Live Values</string>
+                 <string>Refresh Pointer</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="3">
-       <widget class="QPushButton" name="stopLockButton">
+            <item row="2" column="1">
+             <widget class="QPushButton" name="readLiveButton">
         <property name="text">
-         <string>Stop Lock</string>
+                 <string>Read Live Values</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="4">
-       <widget class="QPushButton" name="savePresetButton">
+            <item row="2" column="2">
+             <widget class="QPushButton" name="stopLockButton">
         <property name="text">
-         <string>Save Preset</string>
+                 <string>Stop Lock</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="5">
-       <widget class="QPushButton" name="loadPresetButton">
+            <item row="2" column="3">
+             <widget class="QPushButton" name="savePresetButton">
         <property name="text">
-         <string>Load Preset</string>
+                 <string>Save Preset</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
-       <widget class="QPushButton" name="profileConservativeButton">
+            <item row="2" column="4">
+             <widget class="QPushButton" name="loadPresetButton">
         <property name="text">
-         <string>Preset Conservative</string>
+                 <string>Load Preset</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
+            <item row="2" column="5">
+             <widget class="QPushButton" name="profileConservativeButton">
+        <property name="text">
+                 <string>Preset Conservative</string>
+        </property>
+       </widget>
+      </item>
+            <item row="2" column="6">
        <widget class="QPushButton" name="profileBalancedButton">
         <property name="text">
          <string>Preset Balanced</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="2">
-       <widget class="QPushButton" name="profileAggressiveButton">
+            <item row="3" column="0">
+             <widget class="QPushButton" name="profileAggressiveButton">
         <property name="text">
-         <string>Preset Aggressive</string>
+                 <string>Preset Aggressive</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="3">
-       <widget class="QPushButton" name="runtimeButton">
+            <item row="3" column="1">
+             <widget class="QPushButton" name="runtimeButton">
         <property name="text">
-         <string>Open Runtime</string>
+                 <string>Open Runtime</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="4">
-       <widget class="QPushButton" name="valueWritesButton">
+            <item row="3" column="2">
+             <widget class="QPushButton" name="valueWritesButton">
         <property name="text">
-         <string>Open Value Writes</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="5">
-       <widget class="QPushButton" name="advancedMemoryButton">
-        <property name="text">
-         <string>Open Advanced</string>
+                 <string>Open Value Writes</string>
+                </property>
+             </widget>
+            </item>
+            <item row="3" column="3">
+             <widget class="QPushButton" name="advancedMemoryButton">
+                <property name="text">
+                 <string>Open Advanced</string>
         </property>
        </widget>
       </item>
@@ -197,10 +204,25 @@
      <layout class="QHBoxLayout" name="statusPanelsLayout" stretch="0,4,5">
       <item>
        <widget class="QGroupBox" name="connectionBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>300</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="title">
          <string>Connection</string>
         </property>
         <layout class="QGridLayout" name="connectionLayout">
+         <property name="sizeConstraint">
+          <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
+         </property>
          <property name="leftMargin">
           <number>8</number>
          </property>
@@ -256,10 +278,16 @@
       </item>
       <item>
        <widget class="QGroupBox" name="selectionBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="maximumSize">
          <size>
           <width>300</width>
-          <height>16777215</height>
+          <height>310</height>
          </size>
         </property>
         <property name="title">
@@ -301,15 +329,21 @@
       </item>
       <item>
        <widget class="QGroupBox" name="monitorBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="minimumSize">
          <size>
-          <width>440</width>
+          <width>0</width>
           <height>0</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>500</width>
+          <width>410</width>
           <height>16777215</height>
          </size>
         </property>

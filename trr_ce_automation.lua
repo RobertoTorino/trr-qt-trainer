@@ -76,40 +76,40 @@ local CHARACTER_IDS = {
 }
 
 local STAGE_IDS = {
-  { label = "02 - Eternal Paradise", id = 0x02 },
-  { label = "03 - Historic Town Square", id = 0x03 },
-  { label = "04 - Condor Canyon", id = 0x04 },
-  { label = "05 - Arctic Dream", id = 0x05 },
-  { label = "08 - Moonlit Wilderness", id = 0x08 },
-  { label = "0B - Sakura Schoolyard", id = 0x0B },
-  { label = "0C - Tempest", id = 0x0C },
-  { label = "0D - Winter Palace", id = 0x0D },
-  { label = "0E - Hall of Judgement", id = 0x0E },
-  { label = "0F - Naraku", id = 0x0F },
-  { label = "18 - [darkness]", id = 0x18 },
-  { label = "22 - Practice (walls)", id = 0x22 },
-  { label = "23 - Practice (no walls)", id = 0x23 },
-  { label = "28 - Fireworks Over Barcelona", id = 0x28 },
-  { label = "2A - Riverside Promenade", id = 0x2A },
-  { label = "2B - Tropical Rainforest", id = 0x2B },
-  { label = "2C - Moai Excavation", id = 0x2C },
-  { label = "2D - Extravagant Underground", id = 0x2D },
-  { label = "2E - Tulip Festival", id = 0x2E }
+  { label = "02 Eternal Paradise", id = 0x02 },
+  { label = "03 Historic Town Square", id = 0x03 },
+  { label = "04 Condor Canyon", id = 0x04 },
+  { label = "05 Arctic Dream", id = 0x05 },
+  { label = "08 Moonlit Wilderness", id = 0x08 },
+  { label = "0B Sakura Schoolyard", id = 0x0B },
+  { label = "0C Tempest", id = 0x0C },
+  { label = "0D Winter Palace", id = 0x0D },
+  { label = "0E Hall of Judgement", id = 0x0E },
+  { label = "0F Naraku", id = 0x0F },
+  { label = "18 Darkness", id = 0x18 },
+  { label = "22 Practice (walls)", id = 0x22 },
+  { label = "23 Practice (no walls)", id = 0x23 },
+  { label = "28 Fireworks Over Barcelona", id = 0x28 },
+  { label = "2A Riverside Promenade", id = 0x2A },
+  { label = "2B Tropical Rainforest", id = 0x2B },
+  { label = "2C Moai Excavation", id = 0x2C },
+  { label = "2D Extravagant Underground", id = 0x2D },
+  { label = "2E Tulip Festival", id = 0x2E }
 }
 
 local GAME_MODE_KNOWN = {
-  { value = 1, label = "1 - Versus/continuous fight (can black-screen after KO)" },
-  { value = 2, label = "2 - Unknown (0x2)" },
-  { value = 3, label = "3 - Unknown (0x3)" },
-  { value = 4, label = "4 - Round reset/wake workaround" },
-  { value = 5, label = "5 - Practice mode (stable)" }
+  { value = 1, label = "1 Versus | Continuous Fight" },
+  { value = 2, label = "2 Interactive Splash Demo (0x2)" },
+  { value = 3, label = "3 Unknown (0x3)" },
+  { value = 4, label = "4 Round reset/wake workaround" },
+  { value = 5, label = "5 Practice mode (stable)" }
 }
 
 local ROUND_TIME_PRESETS = {
   { label = "Infinite", infinite_value = 1, timer_value = nil },
-  { label = "30 seconds", infinite_value = 0, timer_value = 30 },
-  { label = "60 seconds", infinite_value = 0, timer_value = 60 },
-  { label = "90 seconds", infinite_value = 0, timer_value = 90 },
+  { label = "30 Seconds", infinite_value = 0, timer_value = 30 },
+  { label = "60 Seconds", infinite_value = 0, timer_value = 60 },
+  { label = "90 Seconds", infinite_value = 0, timer_value = 90 },
   { label = "Custom", infinite_value = nil, timer_value = nil }
 }
 
@@ -197,7 +197,7 @@ form.Height = 920
 local status_label = createLabel(form)
 status_label.Left = 16
 status_label.Top = 16
-status_label.Caption = "Status: not attached"
+status_label.Caption = "Status: Not Attached"
 status_label.Width = 520
 
 local p1_label = createLabel(form)
@@ -233,7 +233,7 @@ stage_combo.Width = 520
 local p1_state_checkbox = createCheckBox(form)
 p1_state_checkbox.Left = 16
 p1_state_checkbox.Top = 170
-p1_state_checkbox.Caption = "Set P1 to controller (value 0)"
+p1_state_checkbox.Caption = "Set P1 to Controller (value 0)"
 p1_state_checkbox.Checked = true
 
 local p2_state_checkbox = createCheckBox(form)
@@ -245,7 +245,7 @@ p2_state_checkbox.Checked = true
 local mode_checkbox = createCheckBox(form)
 mode_checkbox.Left = 16
 mode_checkbox.Top = 198
-mode_checkbox.Caption = "Write game mode"
+mode_checkbox.Caption = "Write Game Mode"
 mode_checkbox.Checked = true
 
 local mode_edit = createEdit(form)
@@ -262,13 +262,13 @@ mode_preset_combo.Width = 174
 local mode_desc_label = createLabel(form)
 mode_desc_label.Left = 286
 mode_desc_label.Top = 218
-mode_desc_label.Caption = "Mode: 1 - Versus/continuous fight"
+mode_desc_label.Caption = "Mode: 1 Versus | Continuous Fight"
 mode_desc_label.Width = 250
 
 local hp_checkbox = createCheckBox(form)
 hp_checkbox.Left = 16
 hp_checkbox.Top = 246
-hp_checkbox.Caption = "Write HP bar"
+hp_checkbox.Caption = "Write HP Bar"
 hp_checkbox.Checked = true
 
 local hp_edit = createEdit(form)
@@ -280,7 +280,7 @@ hp_edit.Text = "0x4000000"
 local round_checkbox = createCheckBox(form)
 round_checkbox.Left = 16
 round_checkbox.Top = 274
-round_checkbox.Caption = "Write infinite round"
+round_checkbox.Caption = "Write Infinite Round"
 round_checkbox.Checked = true
 
 local round_edit = createEdit(form)
@@ -292,7 +292,7 @@ round_edit.Text = "1"
 local round_time_checkbox = createCheckBox(form)
 round_time_checkbox.Left = 16
 round_time_checkbox.Top = 302
-round_time_checkbox.Caption = "Write round timer"
+round_time_checkbox.Caption = "Write Round Timer"
 round_time_checkbox.Checked = false
 
 local round_time_edit = createEdit(form)
@@ -309,31 +309,31 @@ round_time_preset_combo.Width = 174
 local round_time_desc_label = createLabel(form)
 round_time_desc_label.Left = 286
 round_time_desc_label.Top = 322
-round_time_desc_label.Caption = "Round time: custom"
+round_time_desc_label.Caption = "Round Time: Custom"
 round_time_desc_label.Width = 250
 
 local stabilize_checkbox = createCheckBox(form)
 stabilize_checkbox.Left = 16
 stabilize_checkbox.Top = 350
-stabilize_checkbox.Caption = "Stabilize writes for ~10s after apply (recommended)"
+stabilize_checkbox.Caption = "Stabilize Writes for ~10s After Apply | Recommended"
 stabilize_checkbox.Checked = true
 
 local lock_checkbox = createCheckBox(form)
 lock_checkbox.Left = 16
 lock_checkbox.Top = 378
-lock_checkbox.Caption = "Lock character/stage while running (continuous apply)"
+lock_checkbox.Caption = "Lock Character | Stage While Running"
 lock_checkbox.Checked = false
 
 local mode_reset_checkbox = createCheckBox(form)
 mode_reset_checkbox.Left = 16
 mode_reset_checkbox.Top = 406
-mode_reset_checkbox.Caption = "Apply mode using reset pulse (4 -> target)"
+mode_reset_checkbox.Caption = "Apply Mode Using Reset Pulse | 4 -> Target"
 mode_reset_checkbox.Checked = false
 
 local transition_guard_checkbox = createCheckBox(form)
 transition_guard_checkbox.Left = 16
 transition_guard_checkbox.Top = 434
-transition_guard_checkbox.Caption = "Pause writes around round transitions"
+transition_guard_checkbox.Caption = "Pause Writes Around Round Transitions"
 transition_guard_checkbox.Checked = true
 
 local transition_guard_edit = createEdit(form)
@@ -351,19 +351,19 @@ transition_guard_label.Width = 80
 local stage_autodisable_checkbox = createCheckBox(form)
 stage_autodisable_checkbox.Left = 16
 stage_autodisable_checkbox.Top = 462
-stage_autodisable_checkbox.Caption = "Auto-disable stage lock after match starts"
+stage_autodisable_checkbox.Caption = "Auto-Disable Stage Lock After Match Starts"
 stage_autodisable_checkbox.Checked = true
 
 local pointer_label = createLabel(form)
 pointer_label.Left = 16
 pointer_label.Top = 490
-pointer_label.Caption = "Battle pointer: unresolved"
+pointer_label.Caption = "Battle Pointer: Unresolved"
 pointer_label.Width = 520
 
 local hint_label = createLabel(form)
 hint_label.Left = 16
 hint_label.Top = 510
-hint_label.Caption = "No pause is needed. Let splash/demo load, then click Apply Selection."
+hint_label.Caption = "Let Splash Demo Load Then Click Apply Selection."
 hint_label.Width = 520
 
 local preset_stable_button = createButton(form)
@@ -376,7 +376,7 @@ local preset_charonly_button = createButton(form)
 preset_charonly_button.Left = 286
 preset_charonly_button.Top = 538
 preset_charonly_button.Width = 250
-preset_charonly_button.Caption = "Preset Char/Stage Only"
+preset_charonly_button.Caption = "Preset Char | Stage Only"
 
 local preset_roundsafe_button = createButton(form)
 preset_roundsafe_button.Left = 366
@@ -429,7 +429,7 @@ advanced_label.Width = 520
 local advanced_p1_checkbox = createCheckBox(form)
 advanced_p1_checkbox.Left = 16
 advanced_p1_checkbox.Top = 674
-advanced_p1_checkbox.Caption = "Write P1 position"
+advanced_p1_checkbox.Caption = "Write P1 Position"
 
 local advanced_p1_x = createEdit(form)
 advanced_p1_x.Left = 176
@@ -452,7 +452,7 @@ advanced_p1_z.Text = "0"
 local advanced_p2_checkbox = createCheckBox(form)
 advanced_p2_checkbox.Left = 16
 advanced_p2_checkbox.Top = 704
-advanced_p2_checkbox.Caption = "Write P2 position"
+advanced_p2_checkbox.Caption = "Write P2 Position"
 
 local advanced_p2_x = createEdit(form)
 advanced_p2_x.Left = 176
@@ -475,7 +475,7 @@ advanced_p2_z.Text = "0"
 local advanced_animation_checkbox = createCheckBox(form)
 advanced_animation_checkbox.Left = 16
 advanced_animation_checkbox.Top = 734
-advanced_animation_checkbox.Caption = "Write P1 animation speed"
+advanced_animation_checkbox.Caption = "Write P1 Animation Speed"
 
 local advanced_animation_edit = createEdit(form)
 advanced_animation_edit.Left = 216
@@ -486,7 +486,7 @@ advanced_animation_edit.Text = "0x00001000"
 local advanced_stage_checkbox = createCheckBox(form)
 advanced_stage_checkbox.Left = 16
 advanced_stage_checkbox.Top = 764
-advanced_stage_checkbox.Caption = "Write global stage ID"
+advanced_stage_checkbox.Caption = "Write Global Stage id"
 
 local advanced_stage_edit = createEdit(form)
 advanced_stage_edit.Left = 216
@@ -497,7 +497,7 @@ advanced_stage_edit.Text = "0x00000000"
 local advanced_state_label = createLabel(form)
 advanced_state_label.Left = 16
 advanced_state_label.Top = 796
-advanced_state_label.Caption = "Game state: n/a | Game state (read): n/a"
+advanced_state_label.Caption = "Game State: n/a | Game State (Read): n/a"
 advanced_state_label.Width = 520
 
 local advanced_read_button = createButton(form)
@@ -564,7 +564,7 @@ end
 local function update_mode_description_from_text()
   local value, _ = parse_u32_input(mode_edit.Text)
   if value == nil then
-    mode_desc_label.Caption = "Mode: invalid"
+    mode_desc_label.Caption = "Mode: Invalid"
     return
   end
 
@@ -576,21 +576,21 @@ local function update_round_time_description_from_text()
   local timer_value, _ = parse_u32_input(round_time_edit.Text)
 
   if inf_value == nil then
-    round_time_desc_label.Caption = "Round time: invalid"
+    round_time_desc_label.Caption = "Round Time: Invalid"
     return
   end
 
   if inf_value == 1 then
-    round_time_desc_label.Caption = "Round time: infinite"
+    round_time_desc_label.Caption = "Round Time: Infinite"
     return
   end
 
   if timer_value == nil then
-    round_time_desc_label.Caption = "Round time: invalid"
+    round_time_desc_label.Caption = "Round Time: Invalid"
     return
   end
 
-  round_time_desc_label.Caption = string.format("Round time: %d seconds (%d ticks)", timer_value, timer_value * ROUND_TIMER_TICKS_PER_SECOND)
+  round_time_desc_label.Caption = string.format("Round Time: %d Seconds (%d Ticks)", timer_value, timer_value * ROUND_TIMER_TICKS_PER_SECOND)
 end
 
 local function apply_round_time_preset(index)
@@ -623,12 +623,12 @@ end
 
 parse_u32_input = function(value_text)
   if value_text == nil then
-    return nil, "empty value"
+    return nil, "Empty Value"
   end
 
   local s = value_text:match("^%s*(.-)%s*$")
   if s == "" then
-    return nil, "empty value"
+    return nil, "Empty Value"
   end
 
   local n = nil
@@ -639,35 +639,35 @@ parse_u32_input = function(value_text)
   end
 
   if n == nil then
-    return nil, string.format("invalid number '%s'", s)
+    return nil, string.format("Invalid nNumber '%s'", s)
   end
 
   if n < 0 or n > 0xFFFFFFFF then
-    return nil, string.format("out of range 0..0xFFFFFFFF (%s)", s)
+    return nil, string.format("Out of Range 0..0xFFFFFFFF (%s)", s)
   end
 
-  return math.floor(n), "ok"
+  return math.floor(n), "Ok"
 end
 
 local function update_pointer()
   cached_battle_pointer = resolve_battle_ptr_with_retry(POINTER_RETRY_COUNT, POINTER_RETRY_DELAY_MS)
   if cached_battle_pointer == nil then
-    pointer_label.Caption = "Battle pointer: unresolved (let splash/demo run, then retry)"
+    pointer_label.Caption = "Battle Pointer: Unresolved | Let Splash Demo Run Then Retry)"
     return false
   end
 
-  pointer_label.Caption = string.format("Battle pointer: 0x%X", cached_battle_pointer)
+  pointer_label.Caption = string.format("Battle Pointer: 0x%X", cached_battle_pointer)
   return true
 end
 
 local function verify_u32_be(addr, expected)
   local actual = read_u32_be(addr)
   if actual == nil then
-    return false, "read failed"
+    return false, "Read Failed"
   end
 
   if actual ~= expected then
-    return false, string.format("expected 0x%X got 0x%X", expected, actual)
+    return false, string.format("Expected 0x%X Got 0x%X", expected, actual)
   end
 
   return true, "ok"
@@ -723,7 +723,7 @@ end
 
 local function read_live_values_into_ui()
   if not ensure_rpcs3_attached() then
-    status_label.Caption = "Status: failed to attach"
+    status_label.Caption = "Status: Failed to Attach"
     return false
   end
 
@@ -775,7 +775,7 @@ end
 
 local function read_advanced_values_into_ui()
   if not ensure_rpcs3_attached() then
-    status_label.Caption = "Status: failed to attach"
+    status_label.Caption = "Status: Failed to Attach"
     return false
   end
 
@@ -791,7 +791,7 @@ local function read_advanced_values_into_ui()
   local global_stage = read_u32_be(ADDR_GLOBAL_STAGE_ID)
 
   if p1_x == nil or p1_y == nil or p1_z == nil or p2_x == nil or p2_y == nil or p2_z == nil then
-    status_label.Caption = "Status: failed to read advanced positions"
+    status_label.Caption = "Status: Failed to Read Advanced Positions"
     return false
   end
 
@@ -804,25 +804,25 @@ local function read_advanced_values_into_ui()
   advanced_animation_edit.Text = animation_speed ~= nil and string.format("0x%08X", animation_speed) or "n/a"
   advanced_stage_edit.Text = global_stage ~= nil and string.format("0x%08X", global_stage) or "n/a"
   advanced_state_label.Caption = string.format(
-    "Game state: %s | Game state (read): %s",
+    "Game state: %s | Game State | Read: %s",
     game_state ~= nil and string.format("0x%08X", game_state) or "n/a",
     game_state_read ~= nil and string.format("0x%08X", game_state_read) or "n/a"
   )
-  status_label.Caption = "Status: advanced values read"
+  status_label.Caption = "Status: Advanced Values Read"
   return true
 end
 
 local function parse_float_input(value_text, label)
   local value = tonumber(value_text)
   if value == nil then
-    return nil, label .. " must be a number"
+    return nil, label .. " Must Be a Number"
   end
-  return value, "ok"
+  return value, "Ok"
 end
 
 local function apply_advanced_values()
   if not ensure_rpcs3_attached() then
-    status_label.Caption = "Status: failed to attach"
+    status_label.Caption = "Status: Failed to Attach"
     return false
   end
 
@@ -861,7 +861,7 @@ local function apply_advanced_values()
     writes_requested = true
     local value, err = parse_u32_input(advanced_animation_edit.Text)
     if value == nil then
-      showMessage("Invalid P1 animation speed: " .. err)
+      showMessage("Invalid P1 Animation Speed: " .. err)
       return false
     end
     all_ok = write_u32_be(ADDR_P1_ANIMATION_SPEED, value) and all_ok
@@ -871,18 +871,18 @@ local function apply_advanced_values()
     writes_requested = true
     local value, err = parse_u32_input(advanced_stage_edit.Text)
     if value == nil then
-      showMessage("Invalid global stage ID: " .. err)
+      showMessage("Invalid Global Stage id: " .. err)
       return false
     end
     all_ok = write_u32_be(ADDR_GLOBAL_STAGE_ID, value) and all_ok
   end
 
   if not writes_requested then
-    showMessage("Select at least one advanced write option.")
+    showMessage("Select at Least one advanced write option.")
     return false
   end
 
-  status_label.Caption = all_ok and "Status: advanced values applied" or "Status: advanced write failed"
+  status_label.Caption = all_ok and "Status: Advanced Values Applied" or "Status: Advanced Write Failed"
   return all_ok
 end
 
@@ -912,7 +912,7 @@ local function stop_runtime_writes(update_status)
   runtime_stage_lock_disabled = false
   runtime_timer.Enabled = false
   if update_status then
-    status_label.Caption = "Status: lock stopped"
+    status_label.Caption = "Status: Lock Stopped"
   end
 end
 
@@ -981,7 +981,7 @@ local function apply_preset_stable_practice()
   stage_autodisable_checkbox.Checked = true
   update_mode_description_from_text()
   update_round_time_description_from_text()
-  showMessage("Preset applied: Stable Practice Mode\nMode=5, HP=0x10000000, Infinite Round=1, Stabilizer ON")
+  showMessage("Preset Applied: Stable Practice Mode\nMode=5, HP=0x10000000, Infinite Round=1, Stabilizer ON")
 end
 
 local function apply_preset_character_stage_only()
@@ -998,7 +998,7 @@ local function apply_preset_character_stage_only()
   stage_autodisable_checkbox.Checked = true
   update_mode_description_from_text()
   update_round_time_description_from_text()
-  showMessage("Preset applied: Character/Stage Only\nAll gameplay values OFF, only characters/stage/states will be written, Stabilizer ON")
+  showMessage("Preset Applied: Character/Stage Only\nAll gameplay values OFF, only characters/stage/states will be written, Stabilizer ON")
 end
 
 local function apply_preset_round_safe()
@@ -1015,23 +1015,23 @@ local function apply_preset_round_safe()
   stage_autodisable_checkbox.Checked = true
   update_mode_description_from_text()
   update_round_time_description_from_text()
-  showMessage("Preset applied: Round Safe\nMode/HP/Infinite Round OFF, Continuous Lock ON")
+  showMessage("Preset Applied: Round Safe\nMode/HP/Infinite Round OFF, Continuous Lock ON")
 end
 
 attach_button.OnClick = function()
   if not ensure_rpcs3_attached() then
-    status_label.Caption = "Status: failed to attach (start RPCS3 first)"
+    status_label.Caption = "Status: Failed to attach (start RPCS3 first)"
     showMessage("Could not attach to rpcs3.exe / rpcs3-avx2.exe")
     return
   end
 
-  status_label.Caption = "Status: attached"
+  status_label.Caption = "Status: Attached"
   update_pointer()
 end
 
 refresh_button.OnClick = function()
   if not ensure_rpcs3_attached() then
-    status_label.Caption = "Status: failed to attach"
+    status_label.Caption = "Status: Failed to attach"
     return
   end
 
@@ -1040,12 +1040,12 @@ end
 
 apply_button.OnClick = function()
   if not ensure_rpcs3_attached() then
-    showMessage("RPCS3 process is not available")
+    showMessage("RPCS3 Process is not available")
     return
   end
 
   if not update_pointer() then
-    showMessage("Battle pointer is 0. Enter splash/demo path once, then try again.")
+    showMessage("Battle Pointer is 0. Enter splash demo once then try again.")
     return
   end
 
@@ -1054,7 +1054,7 @@ apply_button.OnClick = function()
   local st = STAGE_IDS[stage_combo.ItemIndex + 1]
 
   if p1 == nil or p2 == nil or st == nil then
-    showMessage("Invalid selection")
+    showMessage("Invalid Selection")
     return
   end
 
@@ -1078,7 +1078,7 @@ apply_button.OnClick = function()
   if options.write_mode then
     local value, err = parse_u32_input(mode_edit.Text)
     if value == nil then
-      showMessage("Invalid game mode value: " .. err)
+      showMessage("Invalid Game Mode Value: " .. err)
       return
     end
     options.mode_value = value
@@ -1087,7 +1087,7 @@ apply_button.OnClick = function()
   if options.write_hp then
     local value, err = parse_u32_input(hp_edit.Text)
     if value == nil then
-      showMessage("Invalid HP bar value: " .. err)
+      showMessage("Invalid HP Bar Value: " .. err)
       return
     end
     options.hp_value = value
@@ -1096,7 +1096,7 @@ apply_button.OnClick = function()
   if options.write_round then
     local value, err = parse_u32_input(round_edit.Text)
     if value == nil then
-      showMessage("Invalid infinite round value: " .. err)
+      showMessage("Invalid Infinite Round Value: " .. err)
       return
     end
     options.round_value = value
@@ -1105,7 +1105,7 @@ apply_button.OnClick = function()
   if options.write_round_time then
     local value, err = parse_u32_input(round_time_edit.Text)
     if value == nil then
-      showMessage("Invalid round timer value: " .. err)
+      showMessage("Invalid Round Timer Value: " .. err)
       return
     end
     options.round_time_value = value * ROUND_TIMER_TICKS_PER_SECOND
@@ -1114,7 +1114,7 @@ apply_button.OnClick = function()
   if options.transition_guard then
     local value, err = parse_u32_input(transition_guard_edit.Text)
     if value == nil then
-      showMessage("Invalid transition pause ms: " .. err)
+      showMessage("Invalid Transition Pause ms: " .. err)
       return
     end
     options.transition_guard_pause_ms = value
@@ -1132,27 +1132,27 @@ apply_button.OnClick = function()
       write_u32_be(cached_battle_pointer + OFF_GAME_MODE, 4)
       sleep(MODE_RESET_PULSE_MS)
     end
-    all_ok = write_and_verify_u32(cached_battle_pointer + OFF_GAME_MODE, options.mode_value, "Game mode", checks) and all_ok
+    all_ok = write_and_verify_u32(cached_battle_pointer + OFF_GAME_MODE, options.mode_value, "Game Mode", checks) and all_ok
   end
 
   if options.write_hp then
-    all_ok = write_and_verify_u32(cached_battle_pointer + OFF_HP_BAR, options.hp_value, "HP bar", checks) and all_ok
+    all_ok = write_and_verify_u32(cached_battle_pointer + OFF_HP_BAR, options.hp_value, "HP Bar", checks) and all_ok
   end
 
   if options.write_round then
-    all_ok = write_and_verify_u32(cached_battle_pointer + OFF_INFINITE_ROUND, options.round_value, "Infinite round", checks) and all_ok
+    all_ok = write_and_verify_u32(cached_battle_pointer + OFF_INFINITE_ROUND, options.round_value, "Infinite Round", checks) and all_ok
   end
 
   if options.write_round_time then
-    all_ok = write_and_verify_u32(cached_battle_pointer + OFF_ROUND_TIMER, options.round_time_value, "Round timer", checks) and all_ok
+    all_ok = write_and_verify_u32(cached_battle_pointer + OFF_ROUND_TIMER, options.round_time_value, "Round Timer", checks) and all_ok
   end
 
   if options.write_p1_state then
-    all_ok = write_and_verify_u32(ADDR_P1_STATE, 0, "P1 state", checks) and all_ok
+    all_ok = write_and_verify_u32(ADDR_P1_STATE, 0, "P1 State", checks) and all_ok
   end
 
   if options.write_p2_state then
-    all_ok = write_and_verify_u32(ADDR_P2_STATE, 1, "P2 state", checks) and all_ok
+    all_ok = write_and_verify_u32(ADDR_P2_STATE, 1, "P2 State", checks) and all_ok
   end
 
   if not all_ok then
@@ -1259,7 +1259,7 @@ end
 
 advanced_read_button.OnClick = function()
   if not read_advanced_values_into_ui() then
-    showMessage("Failed to read advanced values. Ensure RPCS3 01.05 is running.")
+    showMessage("Failed to read advanced values. Ensure game version 01.05 is running.")
   end
 end
 
