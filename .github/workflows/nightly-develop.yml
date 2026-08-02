@@ -6,7 +6,7 @@ on:
     - cron: "0 2 * * *"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-windows-nightly:
@@ -33,7 +33,7 @@ jobs:
       - name: Configure and build
         shell: pwsh
         run: |
-          $shortSha = "${env:GITHUB_SHA}".Substring(0, 8)
+          $shortSha = (git rev-parse --short=8 HEAD).Trim()
           cmake -S . -B build-ci -G "Visual Studio 17 2022" -A x64 `
             "-DTRR_VERSION=0.0.00" `
             "-DTRR_BUILD_NUMBER=${{ github.run_number }}" `
@@ -47,8 +47,10 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $shortSha = "${env:GITHUB_SHA}".Substring(0, 8)
+          $commitSha = (git rev-parse HEAD).Trim()
+          $shortSha = $commitSha.Substring(0, 8)
           $stamp = Get-Date -Format "yyyy.MM.dd"
+          $releaseTag = "trr-nightly-$stamp-${{ github.run_number }}"
           $packageBase = "trr-qt-trainer-nightly-$stamp-${{ github.run_number }}-$shortSha-win64"
           $stagingDir = Join-Path $env:RUNNER_TEMP $packageBase
           $binDir = Join-Path $stagingDir "bin"
@@ -69,6 +71,8 @@ jobs:
 
           "zip=$zipPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "sha256=$hashPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "commit_sha=$commitSha" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "release_tag=$releaseTag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Upload nightly artifact
         uses: actions/upload-artifact@v4
@@ -78,3 +82,15 @@ jobs:
             ${{ steps.package.outputs.zip }}
             ${{ steps.package.outputs.sha256 }}
           if-no-files-found: error
+
+      - name: Publish nightly prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.package.outputs.release_tag }}
+          name: TRR Qt Trainer Nightly ${{ steps.package.outputs.release_tag }}
+          target_commitish: ${{ steps.package.outputs.commit_sha }}
+          prerelease: true
+          make_latest: false
+          files: |
+            ${{ steps.package.outputs.zip }}
+            ${{ steps.package.outputs.sha256 }}
