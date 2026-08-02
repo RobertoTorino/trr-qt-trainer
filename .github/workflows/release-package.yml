@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   build-windows-release:
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 30
 
     steps:
@@ -37,19 +37,27 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Resolve build metadata
+        id: metadata
         shell: pwsh
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          $version = "${{ inputs.version }}"
+          $version = $env:INPUT_VERSION
           if ("${{ github.ref_type }}" -eq "tag") {
             $version = "${{ github.ref_name }}" -replace '^trr-v', ''
           }
           if ([string]::IsNullOrWhiteSpace($version)) {
             $version = "0.0.00"
           }
-          $shortSha = "${env:GITHUB_SHA}".Substring(0, 8)
+          $commitSha = (git rev-parse HEAD).Trim()
+          $shortSha = $commitSha.Substring(0, 8)
+          $releaseTag = "trr-v$version"
 
           "TRR_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
           "TRR_SHORT_SHA=$shortSha" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "commit_sha=$commitSha" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "release_tag=$releaseTag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Configure and build
         shell: pwsh
@@ -58,8 +66,8 @@ jobs:
             "-DTRR_VERSION=$env:TRR_VERSION" `
             "-DTRR_BUILD_NUMBER=${{ github.run_number }}" `
             "-DTRR_COMMIT_SHA=$env:TRR_SHORT_SHA" `
-            -DTRR_BUILD_CHANNEL=release `
-            -DTRR_BUILD_BRANCH=main
+            "-DTRR_BUILD_CHANNEL=release" `
+            "-DTRR_BUILD_BRANCH=main"
           cmake --build build-ci --config Release --parallel
 
       - name: Package portable application
@@ -67,7 +75,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $shortSha = "${env:GITHUB_SHA}".Substring(0, 8)
+          $shortSha = (git rev-parse --short=8 HEAD).Trim()
           $packageBase = "trr-qt-trainer-$env:TRR_VERSION-${{ github.run_number }}-$shortSha-win64"
           $stagingDir = Join-Path $env:RUNNER_TEMP $packageBase
           $binDir = Join-Path $stagingDir "bin"
@@ -99,9 +107,11 @@ jobs:
           if-no-files-found: error
 
       - name: Publish GitHub Release assets
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.metadata.outputs.release_tag }}
+          name: TRR Qt Trainer ${{ steps.metadata.outputs.version }}
+          target_commitish: ${{ steps.metadata.outputs.commit_sha }}
           files: |
             ${{ steps.package.outputs.zip }}
             ${{ steps.package.outputs.sha256 }}
