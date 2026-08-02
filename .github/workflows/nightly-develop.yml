@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-windows-nightly:
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 30
 
     steps:
@@ -35,11 +35,11 @@ jobs:
         run: |
           $shortSha = "${env:GITHUB_SHA}".Substring(0, 8)
           cmake -S . -B build-ci -G "Visual Studio 17 2022" -A x64 `
-            -DTRR_VERSION=0.0.00 `
+            "-DTRR_VERSION=0.0.00" `
             "-DTRR_BUILD_NUMBER=${{ github.run_number }}" `
             "-DTRR_COMMIT_SHA=$shortSha" `
-            -DTRR_BUILD_CHANNEL=nightly `
-            -DTRR_BUILD_BRANCH=develop
+            "-DTRR_BUILD_CHANNEL=nightly" `
+            "-DTRR_BUILD_BRANCH=develop"
           cmake --build build-ci --config Release --parallel
 
       - name: Package nightly application

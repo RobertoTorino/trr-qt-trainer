@@ -180,8 +180,8 @@ RPCS3 uses a lot of memory regions and sometimes gives you an error about alloca
 
 ### RPCS3
 * After installation disable `Check for updates` on startup in settings.
-* Install the PlayStation 3 4.40 Firmware, since this game was released for version 4.40.
-* For the game settings use the custom configuration, described below.
+* Install the PlayStation 3 Firmware.
+* Optional: for the game settings use the custom configuration.
 
 ### Running the game
 * Install a copy of your legally owned Tekken Revolution game, you need the pkg file and the rap file, drag and drop them on the RPCS3 GUI.
