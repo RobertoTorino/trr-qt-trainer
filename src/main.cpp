@@ -1301,7 +1301,7 @@ private:
             QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/RPCS3/rpcs3/releases")));
         });
         connect(downloadCheatEngine, &QPushButton::clicked, &dlg, []() {
-            QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/RobertoTorino/cheat-engine-7.2")));
+            QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/RobertoTorino/cheat-engine-7.2-7.5-portable/releases")));
         });
 
         const auto connectBrowse = [this, &dlg](QPushButton* browseButton, QLineEdit* targetEdit, const QString& title) {

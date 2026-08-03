@@ -1,5 +1,4 @@
-[![Build TRR Qt Trainer Release](https://github.com/RobertoTorino/trr-qt-trainer/actions/workflows/release-package.yml/badge.svg)](https://github.com/RobertoTorino/trr-qt-trainer/actions/workflows/release-package.yml)  [![Build TRR Qt Trainer Nightly](https://github.com/RobertoTorino/trr-qt-trainer/actions/workflows/nightly-develop.yml/badge.svg?branch=develop)](https://github.com/RobertoTorino/trr-qt-trainer/actions/workflows/nightly-develop.yml)
-
+[![Build TRR Qt Trainer Release](https://github.com/RobertoTorino/trr-qt-trainer/actions/workflows/release-package.yml/badge.svg)](https://github.com/RobertoTorino/trr-qt-trainer/actions/workflows/release-package.yml)
 # Tekken Revolution Reborn Qt Trainer (Standalone)
 
 ![TRR_256.png](assets/images/TRR_256.png)
