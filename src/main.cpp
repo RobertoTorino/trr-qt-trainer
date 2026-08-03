@@ -703,7 +703,7 @@ public:
             }
         });
         connect(startRpcs3Button_, &QPushButton::clicked, this, [this]() { showStartRpcs3Dialog(); });
-        connect(mainUi.startCeButton, &QPushButton::clicked, this, [this]() { startCheatEngine(); });
+        connect(mainUi.startCeButton, &QPushButton::clicked, this, [this]() { showStartCheatEngineDialog(); });
         connect(startGameButton_, &QPushButton::clicked, this, [this]() { showStartGameDialog(); });
         connect(restartGameButton_, &QPushButton::clicked, this, [this]() { restartConfiguredGame(); });
         connect(resetEmulatorButton_, &QPushButton::clicked, this, [this]() { resetEmulator(); });
@@ -940,7 +940,11 @@ private:
                 loadEmulator(QStringLiteral("0.0.13"), QStringLiteral("0.0.13"), rpcs3ExePath_, rpcs3Build_);
                 loadEmulator(QStringLiteral("latest"), QStringLiteral("0.0.00"), rpcs3LatestExePath_, rpcs3LatestBuild_);
                 loadEmulator(QStringLiteral("custom"), QStringLiteral("0.0.00"), rpcs3CustomExePath_, rpcs3CustomBuild_);
-                cheatEnginePath_ = QDir::toNativeSeparators(root.value(QStringLiteral("cheatEnginePath")).toString().trimmed());
+                const QString legacyCheatEnginePath = root.value(QStringLiteral("cheatEnginePath")).toString().trimmed();
+                cheatEngine72Path_ = QDir::toNativeSeparators(
+                    root.value(QStringLiteral("cheatEngine72Path")).toString(legacyCheatEnginePath).trimmed());
+                cheatEngine75Path_ = QDir::toNativeSeparators(
+                    root.value(QStringLiteral("cheatEngine75Path")).toString().trimmed());
                 rpcs3ActiveExeChoice_ = std::clamp(root.value(QStringLiteral("defaultEmulator")).toInt(0), 0, 2);
 
                 const auto loadGame = [&games](const QString& titleId, QString& gamePath, int& emulatorChoice, int defaultChoice) {
@@ -972,7 +976,8 @@ private:
         rpcs3ExePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("rpcs3ExePath")).toString().trimmed());
         rpcs3LatestExePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("rpcs3LatestExePath")).toString().trimmed());
         rpcs3CustomExePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("rpcs3CustomExePath")).toString().trimmed());
-        cheatEnginePath_ = QDir::toNativeSeparators(settings.value(QStringLiteral("cheatEnginePath")).toString().trimmed());
+        cheatEngine72Path_ = QDir::toNativeSeparators(settings.value(QStringLiteral("cheatEnginePath")).toString().trimmed());
+        cheatEngine75Path_ = QDir::toNativeSeparators(settings.value(QStringLiteral("cheatEngine75Path")).toString().trimmed());
         if (settings.contains(QStringLiteral("rpcs3ActiveExeChoice")))
         {
             rpcs3ActiveExeChoice_ = settings.value(QStringLiteral("rpcs3ActiveExeChoice")).toInt();
@@ -1043,9 +1048,10 @@ private:
         games.insert(QStringLiteral("NPJB00404"), gameObject(npjb00404GamePath_, npjb00404Rpcs3Choice_));
 
         QJsonObject root;
-        root.insert(QStringLiteral("version"), 2);
+        root.insert(QStringLiteral("version"), 3);
         root.insert(QStringLiteral("defaultEmulator"), rpcs3ActiveExeChoice_);
-        root.insert(QStringLiteral("cheatEnginePath"), cheatEnginePath_.trimmed());
+        root.insert(QStringLiteral("cheatEngine72Path"), cheatEngine72Path_.trimmed());
+        root.insert(QStringLiteral("cheatEngine75Path"), cheatEngine75Path_.trimmed());
         root.insert(QStringLiteral("emulators"), emulators);
         root.insert(QStringLiteral("games"), games);
 
@@ -1164,15 +1170,25 @@ private:
         customRow->addWidget(customBrowse);
         v->addLayout(customRow);
 
-        auto* cheatEngineRow = new QHBoxLayout();
-        auto* cheatEngineLabel = new QLabel(QStringLiteral("Cheat Engine:"), &dlg);
-        auto* cheatEnginePathEdit = new QLineEdit(&dlg);
-        cheatEnginePathEdit->setText(cheatEnginePath_);
-        auto* cheatEngineBrowse = new QPushButton(QStringLiteral("Browse..."), &dlg);
-        cheatEngineRow->addWidget(cheatEngineLabel);
-        cheatEngineRow->addWidget(cheatEnginePathEdit, 1);
-        cheatEngineRow->addWidget(cheatEngineBrowse);
-        v->addLayout(cheatEngineRow);
+        auto* cheatEngine72Row = new QHBoxLayout();
+        auto* cheatEngine72Label = new QLabel(QStringLiteral("CheatEngine 7.2:"), &dlg);
+        auto* cheatEngine72PathEdit = new QLineEdit(&dlg);
+        cheatEngine72PathEdit->setText(cheatEngine72Path_);
+        auto* cheatEngine72Browse = new QPushButton(QStringLiteral("Browse..."), &dlg);
+        cheatEngine72Row->addWidget(cheatEngine72Label);
+        cheatEngine72Row->addWidget(cheatEngine72PathEdit, 1);
+        cheatEngine72Row->addWidget(cheatEngine72Browse);
+        v->addLayout(cheatEngine72Row);
+
+        auto* cheatEngine75Row = new QHBoxLayout();
+        auto* cheatEngine75Label = new QLabel(QStringLiteral("CheatEngine 7.5:"), &dlg);
+        auto* cheatEngine75PathEdit = new QLineEdit(&dlg);
+        cheatEngine75PathEdit->setText(cheatEngine75Path_);
+        auto* cheatEngine75Browse = new QPushButton(QStringLiteral("Browse..."), &dlg);
+        cheatEngine75Row->addWidget(cheatEngine75Label);
+        cheatEngine75Row->addWidget(cheatEngine75PathEdit, 1);
+        cheatEngine75Row->addWidget(cheatEngine75Browse);
+        v->addLayout(cheatEngine75Row);
 
         auto* activeRow = new QHBoxLayout();
         auto* activeLabel = new QLabel(QStringLiteral("Default RPCS3:"), &dlg);
@@ -1232,10 +1248,12 @@ private:
         auto* downloadRow = new QHBoxLayout();
         auto* download0013 = new QPushButton(QStringLiteral("Download RPCS3 0.0.13"), &dlg);
         auto* downloadLatest = new QPushButton(QStringLiteral("Download RPCS3 Latest"), &dlg);
-        auto* downloadCheatEngine = new QPushButton(QStringLiteral("Download CheatEngine"), &dlg);
+        auto* downloadCheatEngine72 = new QPushButton(QStringLiteral("DownLoad CheatEngine 7.2"), &dlg);
+        auto* downloadCheatEngine75 = new QPushButton(QStringLiteral("Download CheatEngine 7,5"), &dlg);
         downloadRow->addWidget(download0013);
         downloadRow->addWidget(downloadLatest);
-        downloadRow->addWidget(downloadCheatEngine);
+        downloadRow->addWidget(downloadCheatEngine72);
+        downloadRow->addWidget(downloadCheatEngine75);
         downloadRow->addStretch(1);
         v->addLayout(downloadRow);
 
@@ -1281,18 +1299,26 @@ private:
             }
         });
 
-        connect(cheatEngineBrowse, &QPushButton::clicked, &dlg, [this, cheatEnginePathEdit]() {
-            QString dir = QFileInfo(cheatEnginePathEdit->text().trimmed()).absolutePath();
-            if (dir.isEmpty())
-            {
-                dir = QCoreApplication::applicationDirPath();
-            }
-            const QString selected = QFileDialog::getOpenFileName(this, QStringLiteral("Select Cheat Engine Executable"), dir, QStringLiteral("Executables (*.exe)"));
-            if (!selected.isEmpty())
-            {
-                cheatEnginePathEdit->setText(QDir::toNativeSeparators(selected));
-            }
-        });
+        const auto connectCheatEngineBrowse = [this, &dlg](QPushButton* browseButton, QLineEdit* pathEdit, const QString& version) {
+            connect(browseButton, &QPushButton::clicked, &dlg, [this, pathEdit, version]() {
+                QString dir = QFileInfo(pathEdit->text().trimmed()).absolutePath();
+                if (dir.isEmpty())
+                {
+                    dir = QCoreApplication::applicationDirPath();
+                }
+                const QString selected = QFileDialog::getOpenFileName(
+                    this,
+                    QStringLiteral("Select CheatEngine %1 Executable").arg(version),
+                    dir,
+                    QStringLiteral("Executables (*.exe)"));
+                if (!selected.isEmpty())
+                {
+                    pathEdit->setText(QDir::toNativeSeparators(selected));
+                }
+            });
+        };
+        connectCheatEngineBrowse(cheatEngine72Browse, cheatEngine72PathEdit, QStringLiteral("7.2"));
+        connectCheatEngineBrowse(cheatEngine75Browse, cheatEngine75PathEdit, QStringLiteral("7.5"));
 
         connect(download0013, &QPushButton::clicked, &dlg, []() {
             QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/RobertoTorino/rpcs3-trr")));
@@ -1300,8 +1326,11 @@ private:
         connect(downloadLatest, &QPushButton::clicked, &dlg, []() {
             QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/RPCS3/rpcs3/releases")));
         });
-        connect(downloadCheatEngine, &QPushButton::clicked, &dlg, []() {
+        connect(downloadCheatEngine72, &QPushButton::clicked, &dlg, []() {
             QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/RobertoTorino/cheat-engine-7.2-7.5-portable/releases")));
+        });
+        connect(downloadCheatEngine75, &QPushButton::clicked, &dlg, []() {
+            QDesktopServices::openUrl(QUrl(QStringLiteral("https://github.com/RobertoTorino/cheat-engine-7.2-7.5-portable/releases/tag/7.5-trr-main-4")));
         });
 
         const auto connectBrowse = [this, &dlg](QPushButton* browseButton, QLineEdit* targetEdit, const QString& title) {
@@ -1344,7 +1373,8 @@ private:
         const QString path = pathEdit->text().trimmed();
         const QString latestPath = latestPathEdit->text().trimmed();
         const QString customPath = customPathEdit->text().trimmed();
-        const QString cheatEnginePath = cheatEnginePathEdit->text().trimmed();
+        const QString cheatEngine72Path = cheatEngine72PathEdit->text().trimmed();
+        const QString cheatEngine75Path = cheatEngine75PathEdit->text().trimmed();
         const QString build = buildEdit->text().trimmed();
         const QString latestBuild = latestBuildEdit->text().trimmed();
         const QString customBuild = customBuildEdit->text().trimmed();
@@ -1377,10 +1407,11 @@ private:
             QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("One or more RPCS3 executable paths do not exist."));
             return;
         }
-        if (!cheatEnginePath.isEmpty() && !QFileInfo(cheatEnginePath).isFile())
+        if ((!cheatEngine72Path.isEmpty() && !QFileInfo(cheatEngine72Path).isFile()) ||
+            (!cheatEngine75Path.isEmpty() && !QFileInfo(cheatEngine75Path).isFile()))
         {
-            AppLogger::error(QStringLiteral("RPCS3 configuration rejected: Cheat Engine executable does not exist."));
-            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("The Cheat Engine executable path does not exist."));
+            AppLogger::error(QStringLiteral("RPCS3 configuration rejected: a CheatEngine executable does not exist."));
+            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("One or more CheatEngine executable paths do not exist."));
             return;
         }
 
@@ -1430,7 +1461,8 @@ private:
         rpcs3ExePath_ = QDir::toNativeSeparators(path);
         rpcs3LatestExePath_ = QDir::toNativeSeparators(latestPath);
         rpcs3CustomExePath_ = QDir::toNativeSeparators(customPath);
-        cheatEnginePath_ = QDir::toNativeSeparators(cheatEnginePath);
+        cheatEngine72Path_ = QDir::toNativeSeparators(cheatEngine72Path);
+        cheatEngine75Path_ = QDir::toNativeSeparators(cheatEngine75Path);
         rpcs3Build_ = build;
         rpcs3LatestBuild_ = latestBuild;
         rpcs3CustomBuild_ = customBuild;
@@ -2164,26 +2196,48 @@ private:
         }
     }
 
-    void startCheatEngine()
+    void showStartCheatEngineDialog()
     {
-        const QString path = cheatEnginePath_.trimmed();
+        QDialog dlg(this);
+        dlg.setWindowTitle(QStringLiteral("Start CheatEngine"));
+        auto* layout = new QVBoxLayout(&dlg);
+        auto* start72Button = new QPushButton(QStringLiteral("Start CE 7.2"), &dlg);
+        auto* start75Button = new QPushButton(QStringLiteral("Start CE 7.5"), &dlg);
+        layout->addWidget(start72Button);
+        layout->addWidget(start75Button);
+
+        connect(start72Button, &QPushButton::clicked, &dlg, [this, &dlg]() {
+            dlg.accept();
+            startCheatEngine(cheatEngine72Path_, QStringLiteral("7.2"));
+        });
+        connect(start75Button, &QPushButton::clicked, &dlg, [this, &dlg]() {
+            dlg.accept();
+            startCheatEngine(cheatEngine75Path_, QStringLiteral("7.5"));
+        });
+
+        dlg.exec();
+    }
+
+    void startCheatEngine(const QString& configuredPath, const QString& version)
+    {
+        const QString path = configuredPath.trimmed();
         if (path.isEmpty() || !QFileInfo(path).isFile())
         {
             QMessageBox::warning(this,
                                  QStringLiteral("TRR Qt Trainer"),
-                                 QStringLiteral("Configure a valid Cheat Engine executable in RPCS3 Config first."));
+                                 QStringLiteral("Configure a valid CheatEngine %1 executable in RPCS3 Config first.").arg(version));
             return;
         }
 
-        AppLogger::info(QStringLiteral("Start Cheat Engine requested: %1").arg(QDir::toNativeSeparators(path)));
+        AppLogger::info(QStringLiteral("Start CheatEngine %1 requested: %2").arg(version, QDir::toNativeSeparators(path)));
         if (!QProcess::startDetached(path, {}))
         {
-            AppLogger::error(QStringLiteral("Failed to start Cheat Engine: %1").arg(QDir::toNativeSeparators(path)));
-            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Failed to start Cheat Engine."));
+            AppLogger::error(QStringLiteral("Failed to start CheatEngine %1: %2").arg(version, QDir::toNativeSeparators(path)));
+            QMessageBox::warning(this, QStringLiteral("TRR Qt Trainer"), QStringLiteral("Failed to start CheatEngine %1.").arg(version));
             return;
         }
 
-        statusLabel_->setText(QStringLiteral("Status: Cheat Engine launch requested"));
+        statusLabel_->setText(QStringLiteral("Status: CheatEngine %1 launch requested").arg(version));
     }
 
     void openTrManual()
@@ -3138,7 +3192,8 @@ private:
     QString rpcs3ExePath_;
     QString rpcs3LatestExePath_;
     QString rpcs3CustomExePath_;
-    QString cheatEnginePath_;
+    QString cheatEngine72Path_;
+    QString cheatEngine75Path_;
     QString rpcs3Build_ = QStringLiteral("0.0.13");
     QString rpcs3LatestBuild_ = QStringLiteral("0.0.00");
     QString rpcs3CustomBuild_ = QStringLiteral("0.0.00");

@@ -47,7 +47,7 @@
             <item row="0" column="3">
              <widget class="QPushButton" name="startCeButton">
         <property name="text">
-                 <string>Start CE</string>
+                         <string>Start CheatEngine</string>
         </property>
        </widget>
       </item>
