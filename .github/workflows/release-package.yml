@@ -8,6 +8,8 @@ on:
         required: true
         default: 0.0.00
   push:
+    branches:
+      - main
     tags:
       - "trr-v*"
 
@@ -105,6 +107,17 @@ jobs:
             ${{ steps.package.outputs.zip }}
             ${{ steps.package.outputs.sha256 }}
           if-no-files-found: error
+
+      - name: Update release tag for main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ steps.metadata.outputs.release_tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag --force $env:RELEASE_TAG ${{ steps.metadata.outputs.commit_sha }}
+          git push origin "refs/tags/$env:RELEASE_TAG" --force
 
       - name: Create draft GitHub Release
         uses: softprops/action-gh-release@v2
