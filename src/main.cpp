@@ -782,7 +782,7 @@ public:
             }
             else
             {
-                monitorGuard_->setText(QStringLiteral("Guard: lock disabled"));
+                monitorGuard_->setText(QStringLiteral("Guard: Lock Disabled"));
             }
 
             if (runtimeStabilizeCyclesLeft_ > 0)
@@ -1739,7 +1739,7 @@ private:
         if (tutorialDialog_ == nullptr)
         {
             tutorialDialog_ = new QDialog(this);
-            tutorialDialog_->setWindowTitle(QStringLiteral("Build/Tutorial"));
+            tutorialDialog_->setWindowTitle(QStringLiteral("Build | Tutorial"));
 
             auto* layout = new QVBoxLayout(tutorialDialog_);
 
@@ -1832,7 +1832,7 @@ private:
 
             connect(openPdfButton, &QPushButton::clicked, this, [this]() {
                 const QString pdfPath = QDir::cleanPath(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("../README.pdf")));
-                AppLogger::info(QStringLiteral("Build/Tutorial PDF requested: %1").arg(pdfPath));
+                AppLogger::info(QStringLiteral("Build | Tutorial PDF requested: %1").arg(pdfPath));
 
                 if (!QFileInfo::exists(pdfPath))
                 {
@@ -1853,7 +1853,7 @@ private:
             tutorialDialog_->resize(1024, 720);
         }
 
-        AppLogger::info(QStringLiteral("Build/Tutorial dialog opened. root=%1").arg(QDir::toNativeSeparators(trainerRoot)));
+        AppLogger::info(QStringLiteral("Build | Tutorial dialog opened. root=%1").arg(QDir::toNativeSeparators(trainerRoot)));
         tutorialReadmeMarkdown_ = loadMarkdown(readmePath, QStringLiteral("Qt Trainer README"));
         tutorialAutomationMarkdown_ = loadMarkdown(automationPath, QStringLiteral("CE Automation README"));
 
@@ -1913,7 +1913,7 @@ private:
 
         if (found.isNull())
         {
-            showTransientInfoMessage(QStringLiteral("Build/Tutorial"), QStringLiteral("No matches for '%1'.").arg(term), 1200);
+            showTransientInfoMessage(QStringLiteral("Build | Tutorial"), QStringLiteral("No matches for '%1'.").arg(term), 1200);
             return;
         }
 
